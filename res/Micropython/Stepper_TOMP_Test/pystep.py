@@ -20,61 +20,51 @@ class Stepper:
             self.p_modes[0].off()
             self.p_modes[1].off()
             self.p_modes[2].off()
-        self.mode = 0
+        self.mode: int = 0
+        
+        self.position: float = 0
+        self.steps: int = 0
     #...
-    def get_step_angle(self) -> float:
-        return(360 / (self.rv_step*(2**self.mode)))
+    def get_step2angle(self, step: int = 1) -> float:
+        return(360*step/(self.rv_step*(2**self.mode)))
+    #...
+    def get_angle2step(self, angle: float = 1) -> int:
+        return(round(self.rv_step*(2**self.mode)*angle/360))
     #...
     def set_mode(self, mode: int) -> None:
-        self.mode = mode
-        self.p_modes[0].value((mode>>0) & 0x1)
-        self.p_modes[1].value((mode>>1) & 0x1)
-        self.p_modes[2].value((mode>>2) & 0x1)
+        self.mode = min(max(mode, 0), 7)
+        self.p_modes[0].value((self.mode>>0) & 0x1)
+        self.p_modes[1].value((self.mode>>1) & 0x1)
+        self.p_modes[2].value((self.mode>>2) & 0x1)
     #...
     def config_movment(self, max_dps: float, max_accel: float, max_jerk: float) -> None:
         self.max_dps = max_dps
         self.max_acc = max_accel
         self.max_jerk = max_jerk
     #...
-    def turn(self, angle: float, delay: float = 10**-3) -> None:
-        if(angle < 0):
-            self.p_dir.on()
-            angle = -angle
-        else:
-            self.p_dir.off()
-        total_steps = round(self.rv_step*(2**self.mode)*angle*2/360)
-        for i in range(total_steps):
-            self.p_step.toggle()
-            sleep(delay/total_steps)
-    #...
     @micropython.native
-    def tomp_turn(self, angle: float) -> None:
+    def turn(self, angle: float, delay: float = 1) -> None:
+        # Add carry
+        real_pos = self.get_step2angle(self.steps)
+        self.position += angle
+        angle = self.position - real_pos
+        #print("angle: ", angle)
+        # Set Direction
+        abs_angle = abs(angle)
+        angle_sign = -1 if angle < 0 else 1
         if(angle < 0):
             self.p_dir.on()
-            angle = -angle
         else:
             self.p_dir.off()
         #...
-        tomp = TOMP()
-        tomp.config(angle, self.max_dps, self.max_acc, self.max_jerk)
-        #...
-        st: float = ticks_ms()/1000
-        t: float = st
-        angle_current: float = 0
-        while(not tomp.end):
-            old_t: float = t
-            t = ticks_ms()/1000 - st
-            dt: float = t - old_t
-            angle_target: float = tomp.get_pos(t)
-            #...
-            sa: float = self.get_step_angle()
-            step: float = (angle_target - angle_current)/sa
-            istep: int = int(step)
-            if(step >= 1):
-                #print(step, dt)
-                for i in range(istep):
-                    self.p_step.toggle()
-                    self.p_step.toggle()
-                    sleep(dt/istep)
-                angle_current += sa*istep
+        turn_step = self.get_angle2step(abs_angle)
+        if(turn_step < 1): return
+        self.steps += turn_step * angle_sign
+        dt: float = delay/turn_step
+        #print(dt)
+        for i in range(turn_step):
+            self.p_step.toggle()
+            self.p_step.toggle()
+            sleep(dt)
+
 

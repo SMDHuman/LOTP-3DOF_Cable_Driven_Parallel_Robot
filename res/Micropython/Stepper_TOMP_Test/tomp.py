@@ -12,9 +12,11 @@ class TOMP:
     Jmax: float = 0
     end: bool = False
     ts: list[float]
-    def config(self, target: float, Vmax: float, Amax: float, Jmax: float) -> None:
+    @micropython.native
+    def __init__(self, target: float, Vmax: float, Amax: float, Jmax: float) -> None:
         self.end = False
-        self.S = target
+        self.S = abs(target)
+        self.S_sign = -1 if target < 0 else 1
         self.Vmax = Vmax
         self.Amax = Amax
         self.Jmax = Jmax
@@ -64,6 +66,7 @@ class TOMP:
         self.ts = [t0, t1, t2, t3, t4, t5, t6, t7]
     
     # 4
+    @micropython.native
     def acc(self, t: float, i: int = -1) -> float:
         if(i == -1):
             i = int(t)
@@ -84,6 +87,7 @@ class TOMP:
             return(self.acc(6)+self.Jmax*(t-self.ts[6]))
         return(0.0)
     #...
+    @micropython.native
     def vel(self, t: float, i: int = -1) -> float:
         if(i == -1):
             i = int(t)
@@ -104,6 +108,7 @@ class TOMP:
             return(self.vel(6)+self.acc(6)*(t-self.ts[6])+(self.Jmax*(t-self.ts[6])**2)/2)
         return(0.0)
     #...
+    @micropython.native
     def pos(self, t: float, i: int = -1) -> float:
         if(i == -1):
             i = int(t)
@@ -123,26 +128,32 @@ class TOMP:
         elif(i == 7):
             return(self.pos(6)+self.vel(6)*(t-self.ts[6])+(self.acc(6)*(t-self.ts[6])**2)/2+(self.Jmax*(t-self.ts[6])**3)/6)
         return(0.0)
-
+    #...
+    @micropython.native
     def get_pos(self, t: float) -> float:
         for i in range(0, 7):
             if(self.ts[i] <= t < self.ts[i+1]):
-                return(self.pos(t, i+1))
-        if(t < 0):
+                return(self.pos(t, i+1) * self.S_sign)
+        if(t <= 0):
             return(0)
-        if(t > self.ts[7]):
+        if(t >= self.ts[7]):
             self.end = True
-            return(self.S)
+            return(self.S * self.S_sign)
         return(0.0)
+    #...
+    @micropython.native
+    def get_path_time(self)->float:
+        return(self.ts[-1])
 
 if(__name__ == "__main__"):
     tomp = TOMP()
-    tomp.config(180, 1000, 1000, 1000)
-    print(tomp.ts)
-    exit()
+    tomp.config(360, 360, 360, 360)
 
     t = 0
+    old_pos = 0
     while(not tomp.end):
         pos = tomp.get_pos(t)
-        print(f"{round(t, 1)}s >>> {pos}")
+        #print(f"{round(t, 1)}s >>> {pos}")
+        print(f"speed >>> {pos - old_pos}")
+        old_pos = pos
         t += 0.1
