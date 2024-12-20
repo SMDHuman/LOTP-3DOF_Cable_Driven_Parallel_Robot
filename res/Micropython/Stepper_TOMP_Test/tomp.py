@@ -1,3 +1,4 @@
+# Check docs for more info about Third order point-to-point motion profile
 from time import time_ns, sleep
 from math import sqrt
 
