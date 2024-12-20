@@ -1,14 +1,15 @@
-#ifndef SERIAL_COM_H
-#define SERIAL_COM_H
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
+#ifndef SERIAL_COM_H
+#define SERIAL_COM_H
 #include <Arduino.h>
 #include "esp_camera.h"
 
 //-----------------------------------------------------------------------------
 #define BAUDRATE 115200
 
+//-----------------------------------------------------------------------------
 #define S_END 0xC0
 #define S_ESC 0xDB
 #define S_ESC_END 0xDC
@@ -24,4 +25,5 @@ void serial_task();
 void send_slip(uint8_t *buf, size_t len);
 void send_image(size_t w, size_t h, pixformat_t pfmt, uint8_t *buf, size_t len);
 
+//-----------------------------------------------------------------------------
 #endif

@@ -15,7 +15,6 @@ void serial_task(){
     uint8_t cmd = Serial.read();
     if(cmd == CMD_TRIGGER){
       camera_trigger = true;
-      delay(100);
     }
     else if(cmd == CMD_ONESHOT){
       camera_capture_mode = ONESHOT;
@@ -30,6 +29,7 @@ void serial_task(){
 
 //-----------------------------------------------------------------------------
 void send_slip(uint8_t *buf, size_t len){
+  Serial.write(S_END);
   for(size_t i = 0; i < len; i++){
     if(buf[i] == S_END){
       Serial.write(S_ESC);

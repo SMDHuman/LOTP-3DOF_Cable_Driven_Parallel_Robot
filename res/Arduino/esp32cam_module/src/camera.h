@@ -1,8 +1,8 @@
-#ifndef CAMERA_H
-#define CAMERA_H
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
+#ifndef CAMERA_H
+#define CAMERA_H
 #include <Arduino.h>
 #include "esp_camera.h"
 
@@ -31,9 +31,11 @@ static camera_config_t camera_config = {
     .pixel_format   = PIXFORMAT_JPEG,
     .frame_size     = FRAMESIZE_240X240,
     .jpeg_quality   = 20,
-    .fb_count       = 1,
+    .fb_count       = 2,
+    .fb_location    = CAMERA_FB_IN_PSRAM,
     .grab_mode      = CAMERA_GRAB_LATEST
 };
+
 //-----------------------------------------------------------------------------
 enum capture_mode_e {
     ONESHOT,
@@ -46,4 +48,5 @@ extern bool camera_trigger;
 void camera_init();
 void camera_task();
 
+//-----------------------------------------------------------------------------
 #endif
