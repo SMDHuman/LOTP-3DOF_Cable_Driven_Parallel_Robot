@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+E:/Tech/Projects/LOTP-3DOF_Cable_Driven_Parallel_Robot/res/ESP-IDF/espcam_module/build/CMakeFiles/bootloader
+E:/Tech/Projects/LOTP-3DOF_Cable_Driven_Parallel_Robot/res/ESP-IDF/espcam_module/build/CMakeFiles/bootloader.rule
+E:/Tech/Projects/LOTP-3DOF_Cable_Driven_Parallel_Robot/res/ESP-IDF/espcam_module/build/CMakeFiles/bootloader-complete.rule
+E:/Tech/Projects/LOTP-3DOF_Cable_Driven_Parallel_Robot/res/ESP-IDF/espcam_module/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+E:/Tech/Projects/LOTP-3DOF_Cable_Driven_Parallel_Robot/res/ESP-IDF/espcam_module/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+E:/Tech/Projects/LOTP-3DOF_Cable_Driven_Parallel_Robot/res/ESP-IDF/espcam_module/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+E:/Tech/Projects/LOTP-3DOF_Cable_Driven_Parallel_Robot/res/ESP-IDF/espcam_module/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+E:/Tech/Projects/LOTP-3DOF_Cable_Driven_Parallel_Robot/res/ESP-IDF/espcam_module/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+E:/Tech/Projects/LOTP-3DOF_Cable_Driven_Parallel_Robot/res/ESP-IDF/espcam_module/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+E:/Tech/Projects/LOTP-3DOF_Cable_Driven_Parallel_Robot/res/ESP-IDF/espcam_module/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule
