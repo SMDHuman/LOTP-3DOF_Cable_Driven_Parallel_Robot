@@ -1,0 +1,1 @@
+esptool -p COM11 --baud 115200 write_flash --flash_size=detect 0 ESP8266_GENERIC-20241129-v1.24.1.bin
