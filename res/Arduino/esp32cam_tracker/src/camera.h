@@ -30,7 +30,7 @@ static camera_config_t camera_config = {
     .ledc_channel   = LEDC_CHANNEL_0,
     .pixel_format   = PIXFORMAT_JPEG,
     .frame_size     = FRAMESIZE_240X240,
-    .jpeg_quality   = 20,
+    .jpeg_quality   = 25,
     .fb_count       = 2,
     .fb_location    = CAMERA_FB_IN_PSRAM,
     .grab_mode      = CAMERA_GRAB_LATEST
@@ -39,7 +39,8 @@ static camera_config_t camera_config = {
 //-----------------------------------------------------------------------------
 enum capture_mode_e {
     ONESHOT,
-    STREAM 
+    STREAM,
+    ONLED
 };
 extern capture_mode_e camera_capture_mode;
 extern bool camera_trigger;

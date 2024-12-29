@@ -18,6 +18,7 @@
 #define CMD_TRIGGER 0x0A
 #define CMD_ONESHOT 0x0B
 #define CMD_STREAM 0x0C
+#define CMD_ONLED 0x0D
 
 //-----------------------------------------------------------------------------
 void serial_init();

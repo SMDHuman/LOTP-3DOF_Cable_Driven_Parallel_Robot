@@ -13,7 +13,7 @@ void serial_init(){
 void serial_task(){
   if(Serial.available()){
     uint8_t cmd = Serial.read();
-    if(cmd == CMD_TRIGGER){
+    if((cmd == CMD_TRIGGER) & (camera_capture_mode == ONESHOT)){
       camera_trigger = true;
     }
     else if(cmd == CMD_ONESHOT){
@@ -22,6 +22,10 @@ void serial_task(){
     }
     else if(cmd == CMD_STREAM){
       camera_capture_mode = STREAM;
+      camera_trigger = false;
+    }
+    else if(cmd == CMD_ONLED){
+      camera_capture_mode = ONLED;
       camera_trigger = false;
     }
   }

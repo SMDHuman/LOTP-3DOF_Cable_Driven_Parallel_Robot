@@ -16,6 +16,8 @@ void camera_init(){
     Serial.println("Failed to initialize camera!!");
     return;
   }
+  sensor_t * s = esp_camera_sensor_get();
+  s->set_special_effect(s, 2); // 0 to 6 (0 - No Effect, 1 - Negative, 2 - Grayscale, 3 - Red Tint, 4 - Green Tint, 5 - Blue Tint, 6 - Sepia)
 }
 //-----------------------------------------------------------------------------
 void camera_task(){
@@ -24,6 +26,11 @@ void camera_task(){
   if(!fb){
     Serial.println("Couldn't get frame buffer!");
     return;
+  }
+  //...
+  if((camera_capture_mode == ONLED) & camera_trigger){
+    send_image(fb->width, fb->height, fb->format, fb->buf, fb->len);
+    camera_trigger = false;
   }
   //...
   if((camera_capture_mode == ONESHOT) & camera_trigger){
