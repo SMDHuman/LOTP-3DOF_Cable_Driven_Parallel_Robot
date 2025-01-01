@@ -47,20 +47,27 @@ def get_frame() -> list[int]:
     #...
     return(frame_buf)
 #------------------------------------------------------------------------------
-def process_dif_surf(surf_A: pg.Surface, surf_B: pg.Surface):
-    if(surf_A.get_size() != surf_B.get_size()): return(None)
+def process_dif_surf(surf_A: pg.Surface, surf_B: pg.Surface) -> pg.Surface:
     new_surf = pg.Surface(surf_A.get_size())
     for y in range(new_surf.get_height()):
         for x in range(new_surf.get_width()):
             color_A = surf_A.get_at((x, y))
             color_B = surf_B.get_at((x, y))
-            gray_A = (color_A[0] + color_A[1] + color_A[2])//255
-            gray_B = (color_B[0] + color_B[1] + color_B[2])//255
+            gray_A = (color_A[0] + color_A[1] + color_A[2])//3
+            gray_B = (color_B[0] + color_B[1] + color_B[2])//3
             diff = gray_A - gray_B
-            r = max(diff, 0) * 100
-            b = -min(diff, 0) * 100
+            r = max(diff, 0)
+            b = -min(diff, 0)
+            r = r if r > 100 else 0
+            b = b if b > 100 else 0
             new_surf.set_at((x, y), [max(min(r, 255), 0), 0, max(min(b, 255), 0)])
     return(new_surf)
+def jpg_bytes_to_surf(buffer) -> pg.Surface:
+    file = open("frame.jpeg", "wb")
+    file.write(bytes(buffer))
+    file.close()
+    #...
+    return(pg.image.load("frame.jpeg"))
 #------------------------------------------------------------------------------
 #...
 capture_mode = CMD_ONLED
@@ -89,12 +96,8 @@ while(True):
         print(f"frame size: {len(frame)}b")
         if(len(frame) > 0):
             #...
-            file = open("frame.jpeg", "wb")
-            file.write(bytes(frame))
-            file.close()
-            #...
             frame_surf_old = frame_surf
-            frame_surf = pg.image.load("frame.jpeg")
+            frame_surf = jpg_bytes_to_surf(frame)
             #...
             frame_surf_clipped_old = frame_surf_clipped
             frame_surf_clipped = pg.Surface(frame_surf.get_size())
