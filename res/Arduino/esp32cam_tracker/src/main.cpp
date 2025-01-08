@@ -6,6 +6,7 @@
 #include "serial_com.h"
 #include "camera.h"
 #include "beacon_com.h"
+#include "tracker.h"
 
 //-----------------------------------------------------------------------------
 void led_init();
@@ -21,6 +22,7 @@ bool refresh_enable = true;
 void setup() {
   led_init();
   serial_init();
+  tracker_init();
   camera_init();
   beacon_init();
 }
@@ -29,6 +31,7 @@ void setup() {
 void loop() {
   serial_task();
   beacon_task();
+  tracker_init();
   led_task();
   camera_task();
 }
@@ -40,9 +43,10 @@ void led_init(){
 
 //-----------------------------------------------------------------------------
 void led_task(){
-  if(millis() - led_task_last > 1000){
+  if(millis() - led_task_last > 333){
     digitalWrite(33, led_state);
     led_state = !led_state;
+    //...
     led_task_last = millis();
   }
 }

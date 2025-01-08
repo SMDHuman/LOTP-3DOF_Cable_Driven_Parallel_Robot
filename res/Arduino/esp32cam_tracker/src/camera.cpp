@@ -3,6 +3,8 @@
 //-----------------------------------------------------------------------------
 #include "camera.h"
 #include "serial_com.h"
+#include "beacon_com.h"
+#include "tracker.h"
 
 //-----------------------------------------------------------------------------
 capture_mode_e camera_capture_mode = ONESHOT;
@@ -28,6 +30,9 @@ void camera_task(){
     return;
   }
   //...
+  if(get_beacon_last_stat() != -1){
+    tracker_render_frame(fb->width, fb->height, fb->format, fb->buf, fb->len);
+  }
   if((camera_capture_mode == ONLED) & camera_trigger){
     send_image(fb->width, fb->height, fb->format, fb->buf, fb->len);
     camera_trigger = false;

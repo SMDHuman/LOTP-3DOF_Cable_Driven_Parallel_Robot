@@ -3,6 +3,7 @@
 //-----------------------------------------------------------------------------
 #include "serial_com.h"
 #include "camera.h"
+#include "tracker.h"
 
 //-----------------------------------------------------------------------------
 void serial_init(){
@@ -13,20 +14,21 @@ void serial_init(){
 void serial_task(){
   if(Serial.available()){
     uint8_t cmd = Serial.read();
+    camera_trigger = false;
     if((cmd == CMD_TRIGGER) & (camera_capture_mode == ONESHOT)){
       camera_trigger = true;
     }
     else if(cmd == CMD_ONESHOT){
       camera_capture_mode = ONESHOT;
-      camera_trigger = false;
     }
     else if(cmd == CMD_STREAM){
       camera_capture_mode = STREAM;
-      camera_trigger = false;
     }
     else if(cmd == CMD_ONLED){
       camera_capture_mode = ONLED;
-      camera_trigger = false;
+    }
+    else if(cmd == CMD_REQUEST_FRAME){
+      send_slip((uint8_t *)tracker_frame, tracker_width*tracker_height*2);
     }
   }
 }
@@ -52,11 +54,5 @@ void send_slip(uint8_t *buf, size_t len){
 
 //-----------------------------------------------------------------------------
 void send_image(size_t w, size_t h, pixformat_t pfmt, uint8_t *buf, size_t len){
-  if(pfmt == PIXFORMAT_RGB565){
-    send_slip(buf, len);
-  }
-  if(pfmt == PIXFORMAT_JPEG){
-    send_slip(buf, len);
-  }
-  return;
+  send_slip(buf, len);
 }

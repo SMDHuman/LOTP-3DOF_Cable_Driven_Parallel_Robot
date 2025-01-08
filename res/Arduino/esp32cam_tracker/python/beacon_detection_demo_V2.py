@@ -28,7 +28,7 @@ class App:
         font = pg.font.SysFont("arial", 10)
         self.win = pg.display.set_mode((480, 480))
         #...
-        self.esp = Serial("COM17", 115200, timeout=1)
+        self.esp = Serial("COM3", 115200, timeout=1)
         self.esp.read_until(bytes([S_END, S_END])) # If package incoming, wait for the end-start
         self.esp.read_until(bytes([S_END])) # Skip that second package too
         self.esp.write(bytes([CMD_ONLED]))
