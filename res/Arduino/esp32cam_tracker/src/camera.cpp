@@ -19,10 +19,14 @@ void camera_init(){
     return;
   }
   sensor_t * s = esp_camera_sensor_get();
-  s->set_special_effect(s, 2); // 0 to 6 (0 - No Effect, 1 - Negative, 2 - Grayscale, 3 - Red Tint, 4 - Green Tint, 5 - Blue Tint, 6 - Sepia)
+  // 0 to 6 (0 - No Effect, 1 - Negative, 2 - Grayscale ...
+  s->set_special_effect(s, 2); 
 }
 //-----------------------------------------------------------------------------
 void camera_task(){
+  uint64_t task_start = millis();
+  static uint64_t last_camera_report;
+  //...
   camera_fb_t *fb = esp_camera_fb_get(); // get fresh image
   //...
   if(!fb){
@@ -33,6 +37,7 @@ void camera_task(){
   if(get_beacon_last_stat() != -1){
     tracker_render_frame(fb->width, fb->height, fb->format, fb->buf, fb->len);
   }
+  //...
   if((camera_capture_mode == ONLED) & camera_trigger){
     send_image(fb->width, fb->height, fb->format, fb->buf, fb->len);
     camera_trigger = false;
@@ -48,4 +53,13 @@ void camera_task(){
   }
   //...
   esp_camera_fb_return(fb);
+  //...
+  uint64_t task_end = millis();
+  #ifdef DEBUG
+  if(last_camera_report - task_end > 200){
+    Serial.print("Camera Task ms: ");
+    Serial.println(task_end - task_start);
+    last_camera_report = task_end;
+  }
+  #endif
 }

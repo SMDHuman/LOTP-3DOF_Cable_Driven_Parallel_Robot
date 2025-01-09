@@ -20,12 +20,14 @@
 #define CMD_STREAM 0x0C
 #define CMD_ONLED 0x0D
 #define CMD_REQUEST_FRAME 0x0E
+#define CMD_REQUEST_POINTS 0x0F
 
 //-----------------------------------------------------------------------------
 void serial_init();
 void serial_task();
 void send_slip(uint8_t *buf, size_t len);
 void send_image(size_t w, size_t h, pixformat_t pfmt, uint8_t *buf, size_t len);
+void end_slip();
 
 //-----------------------------------------------------------------------------
 #endif

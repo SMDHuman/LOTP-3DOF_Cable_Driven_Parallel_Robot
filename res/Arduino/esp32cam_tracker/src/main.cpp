@@ -31,7 +31,7 @@ void setup() {
 void loop() {
   serial_task();
   beacon_task();
-  tracker_init();
+  tracker_task();
   led_task();
   camera_task();
 }
