@@ -83,7 +83,8 @@ void tracker_render_frame(size_t w, size_t h,
 //-----------------------------------------------------------------------------
 static void tracker_search_frame_diff(){
   int32_t max_diff, min_diff;
-  size_t max_diff_i, min_diff_i; 
+  size_t max_diff_i, min_diff_i;
+  // Find min max difference on frames 
   for(size_t y = 0; y < tracker_height; y++){
     for(size_t x = 0; x < tracker_width; x++){
       size_t fi = (y*tracker_width) + x;

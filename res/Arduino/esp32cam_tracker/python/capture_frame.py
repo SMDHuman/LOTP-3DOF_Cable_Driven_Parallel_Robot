@@ -72,7 +72,7 @@ def frame_jpg_bytes_to_surf(buffer) -> pg.Surface:
     return(pg.image.load("frame.jpeg"))
 #------------------------------------------------------------------------------
 #...
-esp = Serial("COM3", 115200, timeout=1)
+esp = Serial("COM17", 115200, timeout=1)
 esp.read_until(bytes([S_END, S_END])) # If package incoming, wait for the end-start
 esp.read_until(bytes([S_END])) # Skip that second package too
 pg.init()
@@ -113,15 +113,19 @@ while(True):
                 #print()
             win.blit(pg.transform.scale(frame_surf, win.get_size()), (0, 0))
         elif(len(package) > 0):
+            print(package)
             data = struct.unpack("16B16L", bytes(package))
             points_id, points = data[:16], data[16:]
+            print(points_id, points)
+            win.blit(pg.transform.scale(frame_surf, win.get_size()), (0, 0))
             for i, p in zip(points_id, points):
+                if(i == 0): break
                 x, y = p%frame_surf.get_width(), p//frame_surf.get_width()
                 text = font.render(f"id:{i}", 0, "red")
                 win.blit(text, (x*win.get_width()//frame_surf.get_width(), y*win.get_height()//frame_surf.get_height()))
 
     #...
-    pg.display.update()
+    pg.display.update() 
     #print("FPS:", round(clock.get_fps(), 1))
     clock.tick()
 #------------------------------------------------------------------------------
