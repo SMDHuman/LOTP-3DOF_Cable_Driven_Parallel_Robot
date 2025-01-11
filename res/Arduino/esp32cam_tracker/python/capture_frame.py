@@ -72,7 +72,7 @@ def frame_jpg_bytes_to_surf(buffer) -> pg.Surface:
     return(pg.image.load("frame.jpeg"))
 #------------------------------------------------------------------------------
 #...
-esp = Serial("COM17", 115200, timeout=1)
+esp = Serial("COM3", 115200, timeout=1)
 esp.read_until(bytes([S_END, S_END])) # If package incoming, wait for the end-start
 esp.read_until(bytes([S_END])) # Skip that second package too
 pg.init()

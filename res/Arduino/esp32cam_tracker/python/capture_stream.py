@@ -70,15 +70,15 @@ def jpg_bytes_to_surf(buffer) -> pg.Surface:
     return(pg.image.load("frame.jpeg"))
 #------------------------------------------------------------------------------
 #...
-capture_mode = CMD_ONLED
-esp = Serial("COM17", 115200, timeout=1)
+capture_mode = CMD_STREAM
+esp = Serial("COM3", 115200, timeout=1)
 esp.read_until(bytes([S_END, S_END])) # If package incoming, wait for the end-start
 esp.read_until(bytes([S_END])) # Skip that second package too
 pg.init()
 win = pg.display.set_mode((480, 480))
 clock = pg.time.Clock()
 #...
-esp.write(bytes([CMD_ONLED]))
+esp.write(bytes([capture_mode]))
 frame_surf = pg.Surface((240, 240))
 frame_surf_clipped = pg.Surface(frame_surf.get_size())
 running = True

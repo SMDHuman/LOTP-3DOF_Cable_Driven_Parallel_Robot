@@ -1,196 +1,182 @@
 from serial import Serial
 from PIL import Image
 import pygame as pg
+import pygame.camera as pgcam
 import numpy as np
 import time
 import math
-
+from utils_V2 import fill
+from random import randint 
 
 # Constants
-S_END = 0xC0
-S_ESC = 0xDB
-S_ESC_END = 0xDC
-S_ESC_ESC = 0xDD
-CMD_TRIGGER = 0x0A
-CMD_ONESHOT = 0x0B
-CMD_STREAM = 0x0C
-CMD_ONLED = 0x0D
+camera_size = (240, 240)
+erode_size = 5
+erode_ratio = 3/5
+dilate_size = 12
 
-class App:
-    running = True
-    calibrating = False
-    calib_frame_count = 0
-    led_status = False
-    def __init__(self): 
-        global font    
-        pg.init()
-        pg.font.init()
-        font = pg.font.SysFont("arial", 10)
-        self.win = pg.display.set_mode((480, 480))
-        #...
-        self.esp = Serial("COM3", 115200, timeout=1)
-        self.esp.read_until(bytes([S_END, S_END])) # If package incoming, wait for the end-start
-        self.esp.read_until(bytes([S_END])) # Skip that second package too
-        self.esp.write(bytes([CMD_ONLED]))
-        #...
-        self.clock = pg.time.Clock()
-        #...
-        self.run()
-    #--------------------------------------------------------------------------
-    def event_task(self):
-        for event in pg.event.get():
-            if(event.type == pg.QUIT):
-                pg.quit()
-                self.running = False
-            if(event.type == pg.KEYDOWN):
-                if(event.key == pg.K_SPACE):
-                    self.calibrating = True
-                    self.calib_frame_count = 0
-    #--------------------------------------------------------------------------
-    def get_frame(self) -> list[int]:
-        while((int(self.esp.read(1)[0]) != S_END)):
-            pass
-        data_buf = self.esp.read_until(bytes([S_END]))
-        frame_buf: list[int] = []
-        i = 0
-        while(i < len(data_buf)):
-            data = int(data_buf[i])
-            i += 1
-            if(data == S_ESC):
-                data_esc = int(data_buf[i])
-                i += 1
-                if(data_esc == S_ESC_END):
-                    frame_buf.append(S_END)
-                elif(data_esc == S_ESC_ESC):
-                    frame_buf.append(S_ESC)
-            elif(data == S_END):
-                break
-            else:
-                frame_buf.append(data)
-        #...
-        return(frame_buf)
-    #--------------------------------------------------------------------------
-    def jpg_bytes_to_surf(self, buffer) -> pg.Surface:
-        file = open("frame.jpg", "wb")
-        file.write(bytes(buffer))
-        file.close()
-        return(pg.image.load("frame.jpg"))
-    #--------------------------------------------------------------------------
-    def process_highlights(self, surf: pg.Surface, size: tuple[int, int])-> list[list[float]]:
-        output: list[list[float]] = [[0.0]*size[0] for i in range(size[1])]
-        sw, sh = surf.get_size()
-        #...
-        for y in range(sh):
-            for x in range(sw):
-                color = surf.get_at((x, y))[0]
-                ox = int(x*size[0]/sw)
-                oy = int(y*size[1]/sh)
-                output[oy][ox] += color
-        #...
-        return(output)
-    #--------------------------------------------------------------------------
-    def visualize_frame(self, surf, frame, div = 1):
-        cw, ch = surf.get_size()
-        fw, fh = len(frame), len(frame[0])
-        for y in range(len(frame)):
-            for x in range(len(frame[y])):
-                value = round(frame[y][x]/div, 1)
-                txt_surf = font.render(str(value), 0, "red")
-                pg.draw.rect(surf, "black", (x*cw/fw, y*ch/fh, cw/fw, ch/fh), 1)
-                surf.blit(txt_surf, (x*cw/fw, y*ch/fh))
-    #--------------------------------------------------------------------------
-    def find_frame_min(self, frame):
-        min_val = 0
-        min_pos = [0, 0]
-        for y in range(len(frame)):
-            for x in range(len(frame[y])):
-                if(frame[y][x] < min_val):
-                    min_val = frame[y][x]
-                    min_pos = [x, y]
-        return(min_val, min_pos)
-    #--------------------------------------------------------------------------
-    def find_frame_max(self, frame):
-        max_val = 0
-        max_pos = [0, 0]
-        for y in range(len(frame)):
-            for x in range(len(frame[y])):
-                if(frame[y][x] > max_val):
-                    max_val = frame[y][x]
-                    max_pos = [x, y]
-        return(max_val, max_pos)
-    #--------------------------------------------------------------------------
-    def run(self):
-        old_frame = None
-        diff_frame = None
-        old_diff_frame = None
-        diff_calib_frame = None
-        cam_img = pg.Surface((240, 240))
-        self.win.fill("gray")
-        while(True):
-            self.event_task()
-            if(not self.running): return
-            # Draw camera
-            if(self.esp.in_waiting):
-                self.led_status = not self.led_status
-                cam_img = self.jpg_bytes_to_surf(self.get_frame())
-                self.win.blit(cam_img, (0, 0))
-                # Visualize brightness frame
-                frame = self.process_highlights(cam_img, (24, 24))
-                surf = cam_img.copy()
-                self.visualize_frame(surf, frame, div = 100)
-                self.win.blit(surf, (240, 0))
-                # Visualize difference frame
-                surf = cam_img.copy()
-                if(old_frame):
-                    if(diff_frame):
-                        old_diff_frame = [row.copy() for row in diff_frame]
-                    diff_frame = [row.copy() for row in frame]
-                    for y in range(len(frame)):
-                        for x in range(len(frame[y])):
-                            diff_frame[y][x] -= old_frame[y][x]
-                            # If calibrated, apply threshold
-                            if(diff_calib_frame):
-                                if(abs(diff_frame[y][x]) <= diff_calib_frame[y][x]):
-                                    diff_frame[y][x] = 0
-                    self.visualize_frame(surf, diff_frame, 100)
-                    self.win.blit(surf, (0, 240))
-                # Calibrate the threshold
-                if(self.calibrating and diff_frame):
-                    pg.draw.circle(self.win, "red", (10, 10), 10)
-                    if(self.calib_frame_count > 20):
-                        self.calibrating = False
-                    else:
-                        self.calib_frame_count += 1
-                        if(not diff_calib_frame): 
-                            diff_calib_frame = [row.copy() for row in diff_frame]
-                        #...
-                        for y in range(len(diff_calib_frame)):
-                            for x in range(len(diff_calib_frame[y])):
-                                if(abs(diff_frame[y][x]) > diff_calib_frame[y][x]):
-                                    diff_calib_frame[y][x] = abs(diff_frame[y][x])
-                # Find blink
-                if(diff_frame and old_diff_frame):
-                    surf = cam_img.copy()
-                    if(self.led_status):
-                        v, guess1 = self.find_frame_max(diff_frame)
-                        v, guess2 = self.find_frame_min(old_diff_frame)
-                    else:
-                        v, guess1 = self.find_frame_min(diff_frame)
-                        v, guess2 = self.find_frame_max(old_diff_frame)
-                    cw, ch = surf.get_size()
-                    fw, fh = len(diff_frame), len(diff_frame[0])
-                    pg.draw.circle(surf, "orange", ((guess1[0]+.5)*cw/fw, (guess1[1]+.5)*ch/fh), 10, 3)
-                    pg.draw.circle(surf, "orange", ((guess1[0]+.5)*cw/fw, (guess1[1]+.5)*ch/fh), 10, 3)
-                    for y in range(len(diff_frame)):
-                        for x in range(len(diff_frame[y])):
-                            txt_surf = font.render(str([x, y]), 0, "red")
-                            pg.draw.rect(surf, "black", (x*cw/fw, y*ch/fh, cw/fw, ch/fh), 1)
-                            #surf.blit(txt_surf, (x*cw/fw, y*ch/fh))
-                    self.win.blit(surf, (240, 240))
+# Initialize things
+pgcam.init()
+pg.init()
+win = pg.display.set_mode(list(np.multiply(camera_size, (3, 2))))
+clock = pg.time.Clock()
+cam = pgcam.Camera()
+cam.start()
+cam_surf = pg.Surface(camera_size)
+filter_surf = pg.Surface(camera_size)
+erode_surf = pg.Surface(camera_size)
+dilate_surf = pg.Surface(camera_size)
+islands_surf = pg.Surface(camera_size)
+tracker_surf = pg.Surface(camera_size)
+tracking_pos = [0, 0]
+tracking_rect = -1
+is_colors = [(randint(0, 255), randint(0, 255), randint(0, 255)) for i in range(100)]
+mouse_on_tracker = [0, 0]
+font = pg.font.SysFont("arial", 20, 1)
 
-                #...
-                old_frame = [row.copy() for row in frame]
-            #...
-            pg.display.update()
-            self.clock.tick(30)
-App()
+while(True):
+    # Events
+    mouse_down = 0
+    for event in pg.event.get():
+        if(event.type == pg.QUIT):
+            pg.quit()
+            quit()
+        if(event.type == pg.MOUSEBUTTONDOWN):
+            mouse_on_tracker = np.subtract(event.pos, np.multiply(camera_size, (2, 1)))
+            mouse_down = event.button
+    #--------------------------------------------------------------------------
+    # Camera resizing and cropping
+    img = cam.get_image()
+    crop_by = min(img.get_size())
+    w = int(camera_size[0]*img.get_width()/crop_by)
+    h = int(camera_size[1]*img.get_height()/crop_by)
+    img = pg.transform.scale(img, (w, h))
+
+    # Camera surface Ready
+    cam_surf.blit(img, ((camera_size[0]-w)/2, (camera_size[1]-h)/2))
+
+    #--------------------------------------------------------------------------
+    # Apply filter
+    for y in range(camera_size[1]):
+        for x in range(camera_size[0]):
+            r, g, b, a = cam_surf.get_at((x, y))
+            gc = (r+g+b)/3
+            f = 235 < gc < 255
+            color = ["black", "white"][f]
+            filter_surf.set_at((x, y), color)
+
+    #--------------------------------------------------------------------------
+    # Erode and dilate
+    erode_surf.fill(0)
+    # Erode
+    for y in range(camera_size[1]-erode_size):
+        for x in range(camera_size[0]-erode_size):
+            if(filter_surf.get_at((x+(erode_size//2), y+(erode_size//2)))[0] > 128):
+                sum_area = 0
+                for ay in range(erode_size):
+                    for ax in range(erode_size):
+                        gc = filter_surf.get_at((x+ax, y+ay))[0]
+                        sum_area += gc
+                if(sum_area < ((erode_size**2)*erode_ratio)*255):
+                    erode_surf.set_at((x+(erode_size//2), y+(erode_size//2)), "black")
+                else:
+                    erode_surf.set_at((x+(erode_size//2), y+(erode_size//2)), "white")
+    # Dilate
+    dilate_surf.fill(0)
+    for y in range(camera_size[1]-dilate_size):
+        for x in range(camera_size[0]-dilate_size):
+            color = erode_surf.get_at((x+(dilate_size//2), y+(dilate_size//2)))
+            if(color[0] >= 128):
+                for ay in range(dilate_size):
+                    for ax in range(dilate_size):
+                        dilate_surf.set_at((x+ax, y+ay), color)
+
+    #--------------------------------------------------------------------------
+    # Fload and colorize islands
+    islands_surf.blit(dilate_surf, (0, 0))
+    color_index = 0
+    for y in range(camera_size[1]):
+        for x in range(camera_size[0]):
+            color = islands_surf.get_at((x, y))
+            if(color == pg.Color("white")):
+                fill(islands_surf, (x, y), pg.Color(is_colors[color_index]))
+                color_index += 1
+
+    #--------------------------------------------------------------------------
+    # Record islands size and position
+    islands_rect = {}
+    for y in range(camera_size[1]):
+        for x in range(camera_size[0]):
+            color = islands_surf.get_at((x, y))
+            if(color != pg.Color("black")):
+                color_index = is_colors.index((color.r, color.g, color.b))
+                if(color_index not in islands_rect):
+                    islands_rect[color_index] = [x, y, x, y]
+                else:
+                    if(x < islands_rect[color_index][0]):
+                        islands_rect[color_index][0] = x
+                    if(y < islands_rect[color_index][1]):
+                        islands_rect[color_index][1] = y
+                    if(x > islands_rect[color_index][2]):
+                        islands_rect[color_index][2] = x
+                    if(y > islands_rect[color_index][3]):
+                        islands_rect[color_index][3] = y
+                
+    # Draw islands rect
+    for i in islands_rect:
+        x1, y1, x2, y2 = islands_rect[i]
+        pg.draw.rect(islands_surf, "red", (x1, y1, x2-x1, y2-y1), 1)
+
+    #--------------------------------------------------------------------------
+    # Tracker
+    tracker_surf.blit(islands_surf, (0, 0))
+    #Select rect to track
+    x, y = mouse_on_tracker
+    if(mouse_down == 1 and 0 <= x < camera_size[0] and 0 <= y < camera_size[1]):
+        tracking_rect = -1
+        for i in islands_rect:
+            x1, y1, x2, y2 = islands_rect[i]
+            if(x1 < x < x2 and y1 < y < y2):
+                tracking_rect = i
+        if(tracking_rect != -1):
+            x1, y1, x2, y2 = islands_rect[tracking_rect]
+            tracking_pos = [int((x1+x2)/2), int((y1+y2)/2)]
+    # Find nearest island rect
+    if(tracking_rect != -1):
+        nearest = camera_size[0] + camera_size[1]
+        tracking_rect = -1
+        for i in islands_rect:
+            x1, y1, x2, y2 = islands_rect[i]
+            cx, cy = int((x1+x2)/2), int((y1+y2)/2)
+            tx, ty = tracking_pos
+            dist = abs(cx-tx) + abs(cy-ty)
+            if(dist < nearest):
+                nearest = dist
+                tracking_rect = i
+    # Get position of tracked rect
+    if(tracking_rect != -1):
+        x1, y1, x2, y2 = islands_rect[tracking_rect]
+        tracking_pos = [int((x1+x2)/2), int((y1+y2)/2)]
+    # Draw highlight tracked islands rect
+    if(tracking_rect != -1):
+        x1, y1, x2, y2 = islands_rect[tracking_rect]
+        pg.draw.rect(tracker_surf, "yellow", (x1, y1, x2-x1, y2-y1), 3)
+        pg.draw.line(tracker_surf, "orange", (tracking_pos[0], 0), (tracking_pos[0], camera_size[1]), 1)
+        pg.draw.line(tracker_surf, "orange", (0, tracking_pos[1]), (camera_size[0], tracking_pos[1]), 1)
+
+    #...
+    win.blit(cam_surf, list(np.multiply(camera_size, (0, 0))))
+    win.blit(filter_surf, list(np.multiply(camera_size, (1, 0))))
+    win.blit(erode_surf, list(np.multiply(camera_size, (2, 0))))
+    win.blit(dilate_surf, list(np.multiply(camera_size, (0, 1))))
+    win.blit(islands_surf, list(np.multiply(camera_size, (1, 1))))
+    win.blit(tracker_surf, list(np.multiply(camera_size, (2, 1))))
+    for i in range(6):
+        text_surf = font.render(f'{i+1}/6', 1, "red")
+        x, y = i%3, i//3
+        win.blit(text_surf, list(np.multiply(camera_size, (x, y))))
+    print(islands_rect)
+    print(tracking_rect, tracking_pos)
+    print(f"FPS: {clock.get_fps()}")
+    #...
+    pg.display.update()
+    clock.tick(30)
