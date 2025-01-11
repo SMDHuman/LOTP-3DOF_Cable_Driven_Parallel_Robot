@@ -13,13 +13,13 @@ camera_size = (240, 240)
 erode_size = 5
 erode_ratio = 3/5
 dilate_size = 12
-
 # Initialize things
 pgcam.init()
 pg.init()
 win = pg.display.set_mode(list(np.multiply(camera_size, (3, 2))))
 clock = pg.time.Clock()
-cam = pgcam.Camera()
+print("Cameras:", pgcam.list_cameras())
+cam = pgcam.Camera(1)
 cam.start()
 cam_surf = pg.Surface(camera_size)
 filter_surf = pg.Surface(camera_size)
@@ -121,14 +121,14 @@ while(True):
                     if(y > islands_rect[color_index][3]):
                         islands_rect[color_index][3] = y
                 
-    # Draw islands rect
-    for i in islands_rect:
-        x1, y1, x2, y2 = islands_rect[i]
-        pg.draw.rect(islands_surf, "red", (x1, y1, x2-x1, y2-y1), 1)
 
     #--------------------------------------------------------------------------
     # Tracker
     tracker_surf.blit(islands_surf, (0, 0))
+    # Draw islands rect
+    for i in islands_rect:
+        x1, y1, x2, y2 = islands_rect[i]
+        pg.draw.rect(tracker_surf, "red", (x1, y1, x2-x1, y2-y1), 1)
     #Select rect to track
     x, y = mouse_on_tracker
     if(mouse_down == 1 and 0 <= x < camera_size[0] and 0 <= y < camera_size[1]):
