@@ -21,6 +21,7 @@
 #define CMD_ONLED 0x0D
 #define CMD_REQUEST_FRAME 0x0E
 #define CMD_REQUEST_RECTS 0x0F
+#define CMD_REQUEST_FRAME_COUNT 0x10
 
 //-----------------------------------------------------------------------------
 void serial_init();

@@ -16,6 +16,7 @@ CMD_STREAM = 0x0C
 CMD_ONLED = 0x0D
 CMD_REQUEST_FRAME = 0x0E
 CMD_REQUEST_RECT = 0x0F
+CMD_REQUEST_FRAME_COUNT = 0x10
 colors = [(randint(0, 255), randint(0, 255), randint(0, 255)) for i in range(256)]
 colors[0] = (0, 0, 0)
 #------------------------------------------------------------------------------
@@ -85,6 +86,8 @@ clock = pg.time.Clock()
 esp.write(bytes([CMD_ONESHOT]))
 running = True
 font = pg.font.SysFont("arial", 10)
+last_frame_count = time.time()
+old_frame_count = 0
 #------------------------------------------------------------------------------
 while(True):
     #...
@@ -93,23 +96,28 @@ while(True):
         pg.quit()
         esp.close()
         break
+    if(time.time() - last_frame_count >= 1):
+        esp.write(bytes([CMD_REQUEST_FRAME_COUNT]))
+        frame_count = struct.unpack("I", bytearray(read_slip()))[0]
+        print(frame_count - old_frame_count)
+        old_frame_count = frame_count
+        last_frame_count = time.time()
     #...
     if(pg.K_SPACE in keys_pressed):
         esp.write(bytes([CMD_REQUEST_RECT]))
-        esp.write(bytes([CMD_REQUEST_FRAME]))
-    # Read and display incoming frame
-    if(esp.in_waiting):
+        #esp.write(bytes([CMD_REQUEST_FRAME]))
         rects_package = read_slip()
-        frame_package = read_slip()
-        print(f"package size: {len(frame_package)}b")
-        frame_surf = pg.Surface(frame_package[0:2])
-        for y in range(frame_surf.get_height()):
-            for x in range(frame_surf.get_width()):
-                i = (y*frame_surf.get_width())+x
-                value = frame_package[i+2]
-                #print(value, end = ", ") 
-                c = colors[value]
-                frame_surf.set_at((x, y), colors[value])
+        #frame_package = read_slip()
+        #print(f"package size: {len(frame_package)}b")
+        frame_surf = pg.Surface((240, 176))
+        #if(frame_surf.get_width() * frame_surf.get_height() == len(frame_package)-2):
+        #    for y in range(frame_surf.get_height()):
+        #        for x in range(frame_surf.get_width()):
+        #            i = (y*frame_surf.get_width())+x
+        #            value = frame_package[i+2]
+                    #print(value, end = ", ") 
+        #            c = colors[value]
+        #            frame_surf.set_at((x, y), colors[value])
             #print()
         #...
         l = len(rects_package)//16

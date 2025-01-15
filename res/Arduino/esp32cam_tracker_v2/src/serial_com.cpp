@@ -4,6 +4,7 @@
 #include "serial_com.h"
 #include "camera.h"
 #include "tracker.h"
+#include "utils.h"
 
 //-----------------------------------------------------------------------------
 void serial_init(){
@@ -40,13 +41,21 @@ void serial_task(){
         end_slip();
         send_slip_single(TRACKER_WIDTH);
         send_slip_single(TRACKER_HEIGHT);
-        send_slip(tracker_buffer_A, TRACKER_WIDTH*TRACKER_HEIGHT);
+        send_slip(tracker_buffer_A, TRACKER_BUF_LEN);
         end_slip();
       break;
       //...
       case CMD_REQUEST_RECTS:
         end_slip();
         send_slip((uint8_t*)tracker_points_rect, tracker_points_len*sizeof(point_rect_t));
+        end_slip();
+      break;
+      //...
+      case CMD_REQUEST_FRAME_COUNT:
+        convert64_u frm_cnt;
+        frm_cnt.number = tracker_frame_count;
+        end_slip();
+        send_slip(frm_cnt.div4, 4);
         end_slip();
       break;
     }

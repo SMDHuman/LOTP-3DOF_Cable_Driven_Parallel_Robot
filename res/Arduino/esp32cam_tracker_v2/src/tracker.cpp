@@ -7,7 +7,7 @@
 
 //#define DEBUG
 //-----------------------------------------------------------------------------
-static void switch_buffers();
+//static void switch_buffers();
 static void filter_buffer();
 static void erode_buffer();
 static void dilate_buffer();
@@ -17,10 +17,10 @@ static void locate_rect_buffer();
 
 //-----------------------------------------------------------------------------
 //...
-static uint8_t buffer_A[TRACKER_WIDTH*TRACKER_HEIGHT];
-static uint8_t buffer_B[TRACKER_WIDTH*TRACKER_HEIGHT];
+static uint8_t buffer_A[TRACKER_BUF_LEN];
+//static uint8_t buffer_B[TRACKER_BUF_LEN];
 uint8_t* tracker_buffer_A = buffer_A;
-uint8_t* tracker_buffer_B = buffer_B;
+//uint8_t* tracker_buffer_B = buffer_B;
 uint64_t tracker_frame_count = 0;
 //...
 uint8_t tracker_points_len = 0;
@@ -32,19 +32,18 @@ void tracker_init(){
   //tracker_frame = (uint16_t *)malloc(tracker_width * tracker_height * sizeof(uint16_t));
   //tracker_old_frame = (uint16_t *)malloc(tracker_width * tracker_height * sizeof(uint16_t));
 }
-
 //-----------------------------------------------------------------------------
 void tracker_task(){
   if(tracker_status == READY){
     tracker_status = PROCESS;
     //...
-    switch_buffers();
+    //switch_buffers();
     filter_buffer();
     //...
-    switch_buffers();
+    //switch_buffers();
     erode_buffer();
     //...
-    switch_buffers();
+    //switch_buffers();
     dilate_buffer();
     //...
     flood_buffer();
@@ -53,23 +52,22 @@ void tracker_task(){
     tracker_frame_count++;
   }
 }
-
 //-----------------------------------------------------------------------------
-static void switch_buffers(){
-  static uint8_t buffer_order = true;
-  if(buffer_order){
-    tracker_buffer_A = buffer_B;
-    tracker_buffer_B = buffer_A;
-  }else{
-    tracker_buffer_A = buffer_A;
-    tracker_buffer_B = buffer_B;
-  }
-  buffer_order = !buffer_order;
-}
+//static void switch_buffers(){
+//  static uint8_t buffer_order = true;
+//  if(buffer_order){
+//    tracker_buffer_A = buffer_B;
+//    tracker_buffer_B = buffer_A;
+//  }else{
+//    tracker_buffer_A = buffer_A;
+//    tracker_buffer_B = buffer_B;
+//  }
+//  buffer_order = !buffer_order;
+//}
 //-----------------------------------------------------------------------------
 // Pushes camera frame buffer to tracker buffer 'A'
 void push_camera_buffer(camera_fb_t *fb){
-  switch_buffers();
+  //switch_buffers();
   for(size_t y = 0; y < TRACKER_HEIGHT; y++){
     for(size_t x = 0; x < TRACKER_WIDTH; x++){
       size_t fb_x = (fb->width * x) / TRACKER_WIDTH;
@@ -81,20 +79,24 @@ void push_camera_buffer(camera_fb_t *fb){
 //-----------------------------------------------------------------------------
 // Apply TRACKER_FILTER_MIN filter from 'B' to 'A' buffer
 static void filter_buffer(){
-  for(size_t i = 0; i < TRACKER_WIDTH*TRACKER_HEIGHT; i++){
-    if(tracker_buffer_B[i] < TRACKER_FILTER_MIN){
-      tracker_buffer_A[i] = 0x00;
+  //uint8_t buffer_B[TRACKER_BUF_LEN];
+  uint8_t *buffer_B = (uint8_t *)malloc(TRACKER_BUF_LEN);
+  for(size_t i = 0; i < TRACKER_BUF_LEN; i++){
+    if(tracker_buffer_A[i] < TRACKER_FILTER_MIN){
+      buffer_B[i] = 0x00;
     }else{
-      tracker_buffer_A[i] = 0xFF;
+      buffer_B[i] = 0xFF;
     }
   }
+  //...
+  memcpy(tracker_buffer_A, buffer_B, TRACKER_BUF_LEN);
+  free(buffer_B);
 }
 //-----------------------------------------------------------------------------
 static void erode_buffer(){
   //...
-  for(size_t i = 0; i < TRACKER_WIDTH*TRACKER_HEIGHT; i++){
-    tracker_buffer_A[i] = 0;
-  }
+  uint8_t *buffer_B = (uint8_t *)malloc(TRACKER_BUF_LEN);
+  memset(buffer_B, 0, TRACKER_BUF_LEN);
   //...
   static const uint16_t area = (TRACKER_ERODE*2+1)*(TRACKER_ERODE*2+1); 
   for(size_t y = 0; y < TRACKER_HEIGHT-(TRACKER_ERODE*2); y++){
@@ -103,40 +105,45 @@ static void erode_buffer(){
       uint16_t count = 0;
       for(size_t dy = 0; dy < TRACKER_ERODE*2+1; dy++){
         for(size_t dx = 0; dx < TRACKER_ERODE*2+1; dx++){
-          if(tracker_buffer_B[((y+dy)*TRACKER_WIDTH)+(x+dx)] == 0xFF){
+          if(tracker_buffer_A[((y+dy)*TRACKER_WIDTH)+(x+dx)] == 0xFF){
             count ++;
           }
       }}
       if(area*TRACKER_ERODE_RATIO <= count*TRACKER_ERODE_RATIO_DIV){
-        tracker_buffer_A[((y+TRACKER_ERODE)*TRACKER_WIDTH)+(x+TRACKER_ERODE)] = 0xFF;
+        buffer_B[((y+TRACKER_ERODE)*TRACKER_WIDTH)+(x+TRACKER_ERODE)] = 0xFF;
       }else{
-        tracker_buffer_A[((y+TRACKER_ERODE)*TRACKER_WIDTH)+(x+TRACKER_ERODE)] = 0x0;
+        buffer_B[((y+TRACKER_ERODE)*TRACKER_WIDTH)+(x+TRACKER_ERODE)] = 0x0;
       }
   }}
+  //...
+  memcpy(tracker_buffer_A, buffer_B, TRACKER_BUF_LEN);
+  free(buffer_B);
 }
 //-----------------------------------------------------------------------------
 static void dilate_buffer(){
   //...
-  for(size_t i = 0; i < TRACKER_WIDTH*TRACKER_HEIGHT; i++){
-    tracker_buffer_A[i] = 0;
-  }
+  uint8_t *buffer_B = (uint8_t *)malloc(TRACKER_BUF_LEN);
+  memset(buffer_B, 0, TRACKER_BUF_LEN);
   //...
   for(size_t y = 0; y < TRACKER_HEIGHT-(TRACKER_DILATE*2); y++){
     for(size_t x = 0; x < TRACKER_WIDTH-(TRACKER_DILATE*2); x++){
       //...
-      if(tracker_buffer_B[((y+TRACKER_DILATE)*TRACKER_WIDTH)+(x+TRACKER_DILATE)] == 0xFF){
+      if(tracker_buffer_A[((y+TRACKER_DILATE)*TRACKER_WIDTH)+(x+TRACKER_DILATE)] == 0xFF){
         for(size_t dy = 0; dy < TRACKER_DILATE*2+1; dy++){
           for(size_t dx = 0; dx < TRACKER_DILATE*2+1; dx++){
-            tracker_buffer_A[((y+dy)*TRACKER_WIDTH)+(x+dx)] = 0xFF;
+            buffer_B[((y+dy)*TRACKER_WIDTH)+(x+dx)] = 0xFF;
         }}
       }
   }}
+  //...
+  memcpy(tracker_buffer_A, buffer_B, TRACKER_BUF_LEN);
+  free(buffer_B);
 }
 
 //-----------------------------------------------------------------------------
 static void flood_buffer(){
   uint8_t island_count = 1;
-  for(size_t i = 0; i < TRACKER_WIDTH*TRACKER_HEIGHT; i++){
+  for(size_t i = 0; i < TRACKER_BUF_LEN; i++){
     if(tracker_buffer_A[i] == 255){
       flood_fill(i, island_count);
       island_count++;
@@ -160,7 +167,7 @@ static void flood_fill(size_t s_i, uint8_t value)
     }
     size_t i = check[--check_len];
     // Base cases 
-    if ((i < 0) | (i > TRACKER_WIDTH*TRACKER_HEIGHT)) {
+    if ((i < 0) | (i > TRACKER_BUF_LEN)) {
       continue; 
     }
     //...
@@ -176,12 +183,14 @@ static void flood_fill(size_t s_i, uint8_t value)
         check[check_len++] = i+1;
       }
     }
-    if((tracker_buffer_A[i-TRACKER_WIDTH] != value) & (tracker_buffer_A[i-TRACKER_WIDTH] == base_value)){
+    if((tracker_buffer_A[i-TRACKER_WIDTH] != value) & 
+       (tracker_buffer_A[i-TRACKER_WIDTH] == base_value)){
       if(check_len < (sizeof(check)>>2)){
         check[check_len++] = i-TRACKER_WIDTH;
       }
     }
-    if((tracker_buffer_A[i+TRACKER_WIDTH] != value) & (tracker_buffer_A[i+TRACKER_WIDTH] == base_value)){
+    if((tracker_buffer_A[i+TRACKER_WIDTH] != value) & 
+       (tracker_buffer_A[i+TRACKER_WIDTH] == base_value)){
       if(check_len < (sizeof(check)>>2)){
         check[check_len++] = i+TRACKER_WIDTH;
       }

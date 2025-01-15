@@ -14,22 +14,26 @@ erode_size = 5
 erode_ratio = 3/5
 dilate_size = 12
 # Initialize things
-pgcam.init()
 pg.init()
 win = pg.display.set_mode(list(np.multiply(camera_size, (3, 2))))
 clock = pg.time.Clock()
+
+pgcam.init()
 print("Cameras:", pgcam.list_cameras())
-cam = pgcam.Camera(1)
+cam = pgcam.Camera()
 cam.start()
+
 cam_surf = pg.Surface(camera_size)
 filter_surf = pg.Surface(camera_size)
 erode_surf = pg.Surface(camera_size)
 dilate_surf = pg.Surface(camera_size)
 islands_surf = pg.Surface(camera_size)
 tracker_surf = pg.Surface(camera_size)
+
 tracking_pos = [0, 0]
 tracking_rect = -1
-is_colors = [(randint(0, 255), randint(0, 255), randint(0, 255)) for i in range(100)]
+
+is_colors = [pg.Color(randint(0, 255), randint(0, 255), randint(0, 255)) for i in range(255)]
 mouse_on_tracker = [0, 0]
 font = pg.font.SysFont("arial", 20, 1)
 
@@ -98,7 +102,7 @@ while(True):
         for x in range(camera_size[0]):
             color = islands_surf.get_at((x, y))
             if(color == pg.Color("white")):
-                fill(islands_surf, (x, y), pg.Color(is_colors[color_index]))
+                fill(islands_surf, (x, y), is_colors[color_index])
                 color_index += 1
 
     #--------------------------------------------------------------------------
@@ -108,7 +112,7 @@ while(True):
         for x in range(camera_size[0]):
             color = islands_surf.get_at((x, y))
             if(color != pg.Color("black")):
-                color_index = is_colors.index((color.r, color.g, color.b))
+                color_index = is_colors.index(color)
                 if(color_index not in islands_rect):
                     islands_rect[color_index] = [x, y, x, y]
                 else:
