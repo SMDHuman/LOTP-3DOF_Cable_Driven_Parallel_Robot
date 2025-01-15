@@ -12,10 +12,10 @@
 #define TRACKER_HEIGHT 176
 #define TRACKER_BUF_LEN TRACKER_WIDTH*TRACKER_HEIGHT
 
-#define TRACKER_FILTER_MIN 235
-#define TRACKER_ERODE 3
+#define TRACKER_FILTER_MIN 230
+#define TRACKER_ERODE 1
 #define TRACKER_ERODE_RATIO 3
-#define TRACKER_ERODE_RATIO_DIV 5
+#define TRACKER_ERODE_RATIO_DIV 10
 #define TRACKER_DILATE 5
 
 //-----------------------------------------------------------------------------

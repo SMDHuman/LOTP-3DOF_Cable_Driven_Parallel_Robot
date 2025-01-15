@@ -159,43 +159,42 @@ static void flood_buffer(){
 static void flood_fill(size_t s_i, uint8_t value) 
 { 
   uint8_t base_value = tracker_buffer_A[s_i];
-  size_t check[500] = {s_i};
-  uint16_t check_len = 1;
-  while(check_len > 0){
-    if(check_len > (sizeof(check)>>2)){
-      check_len = (sizeof(check)>>2);
+  size_t check_len = (TRACKER_BUF_LEN>>2);
+  size_t *check = (size_t*)malloc(check_len*sizeof(size_t));
+  check[0] = s_i;
+  uint16_t check_index = 1;
+  while(check_index > 0){
+    if(check_index > check_len){
+      return;
     }
-    size_t i = check[--check_len];
+    size_t i = check[--check_index];
     // Base cases 
     if ((i < 0) | (i > TRACKER_BUF_LEN)) {
       continue; 
     }
+    if(tracker_buffer_A[i] != base_value){
+      continue;
+    }
+    if(tracker_buffer_A[i] == 0){
+      continue;
+    }
     //...
     tracker_buffer_A[i] = value; 
     //...
-    if((tracker_buffer_A[i-1] != value) & (tracker_buffer_A[i-1] == base_value)){
-      if(check_len < (sizeof(check)>>2)){
-        check[check_len++] = i-1;
-      }
+    if(tracker_buffer_A[i-1] != value){
+      check[check_index++] = i-1;
     }
-    if((tracker_buffer_A[i+1] != value) & (tracker_buffer_A[i+1] == base_value)){
-      if(check_len < (sizeof(check)>>2)){
-        check[check_len++] = i+1;
-      }
+    if(tracker_buffer_A[i+1] != value){
+      check[check_index++] = i+1;
     }
-    if((tracker_buffer_A[i-TRACKER_WIDTH] != value) & 
-       (tracker_buffer_A[i-TRACKER_WIDTH] == base_value)){
-      if(check_len < (sizeof(check)>>2)){
-        check[check_len++] = i-TRACKER_WIDTH;
-      }
+    if(tracker_buffer_A[i-TRACKER_WIDTH] != value){
+      check[check_index++] = i-TRACKER_WIDTH;
     }
-    if((tracker_buffer_A[i+TRACKER_WIDTH] != value) & 
-       (tracker_buffer_A[i+TRACKER_WIDTH] == base_value)){
-      if(check_len < (sizeof(check)>>2)){
-        check[check_len++] = i+TRACKER_WIDTH;
-      }
+    if(tracker_buffer_A[i+TRACKER_WIDTH] != value){
+      check[check_index++] = i+TRACKER_WIDTH;
     }
   }
+  free(check);
 } 
 //-----------------------------------------------------------------------------
 static void locate_rect_buffer(){

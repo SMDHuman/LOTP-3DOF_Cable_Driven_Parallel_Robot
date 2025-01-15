@@ -76,7 +76,7 @@ def frame_jpg_bytes_to_surf(buffer) -> pg.Surface:
     return(pg.image.load("frame.jpeg"))
 #------------------------------------------------------------------------------
 #...
-esp = Serial("COM3", 115200, timeout=1)
+esp = Serial("COM17", 115200, timeout=1)
 esp.read_until(bytes([S_END, S_END])) # If package incoming, wait for the end-start
 esp.read_until(bytes([S_END])) # Skip that second package too
 pg.init()
@@ -103,10 +103,10 @@ while(True):
         old_frame_count = frame_count
         last_frame_count = time.time()
     #...
-    if(pg.K_SPACE in keys_pressed):
+    if(pg.K_SPACE in keys_pressed or 1):
         esp.write(bytes([CMD_REQUEST_RECT]))
-        #esp.write(bytes([CMD_REQUEST_FRAME]))
         rects_package = read_slip()
+        #esp.write(bytes([CMD_REQUEST_FRAME]))
         #frame_package = read_slip()
         #print(f"package size: {len(frame_package)}b")
         frame_surf = pg.Surface((240, 176))
@@ -115,7 +115,7 @@ while(True):
         #        for x in range(frame_surf.get_width()):
         #            i = (y*frame_surf.get_width())+x
         #            value = frame_package[i+2]
-                    #print(value, end = ", ") 
+        #            #print(value, end = ", ") 
         #            c = colors[value]
         #            frame_surf.set_at((x, y), colors[value])
             #print()
@@ -124,7 +124,7 @@ while(True):
         for i in range(l-1):
             data = struct.unpack("IIII", bytearray(rects_package[i*16:(i+1)*16]))
             rect = [data[0], data[1], data[2] - data[0]+1, data[3] - data[1]+1]
-            print(data)
+            #print(data)
             pg.draw.rect(frame_surf, "red", rect, 1)
         #...
         win.blit(pg.transform.scale(frame_surf, win.get_size()), (0, 0))
@@ -132,5 +132,5 @@ while(True):
     #...
     pg.display.update() 
     #print("FPS:", round(clock.get_fps(), 1))
-    clock.tick()
+    clock.tick(5)
 #------------------------------------------------------------------------------

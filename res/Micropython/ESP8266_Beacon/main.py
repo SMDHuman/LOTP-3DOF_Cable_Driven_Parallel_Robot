@@ -14,7 +14,7 @@ bcast = b'\xff\xff\xff\xff\xff\xff'   # MAC address of peer's wifi interface
 
 led = Pin(2, Pin.OUT)
 button = Pin(0, Pin.IN)
-led_value = 0
+led_value = 1
 while(True):
     while(button.value()): pass
     led.value(led_value)
