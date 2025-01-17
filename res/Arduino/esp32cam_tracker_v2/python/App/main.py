@@ -45,7 +45,7 @@ class App(tk.Tk):
         # ____ Camera Config Frame ____
         camera_config_fr = tk.LabelFrame(configs_frame, text="Camera Config", width=200)
         camera_config_fr.pack(side = "top", fill="x")
-        tk.Label(camera_config_fr, text="Port:").grid(row=0, column=0)
+        #tk.Label(camera_config_fr, text="Port:").grid(row=0, column=0)
         # ____ Tracker Config Frame ____
         tracker_config_fr = tk.LabelFrame(configs_frame, text="Tracker Config", width=200)
         tracker_config_fr.pack(side = "top", fill="x")
