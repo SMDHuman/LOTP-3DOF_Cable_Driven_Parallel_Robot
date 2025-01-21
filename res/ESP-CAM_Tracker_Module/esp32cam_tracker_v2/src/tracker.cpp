@@ -53,18 +53,6 @@ void tracker_task(){
   }
 }
 //-----------------------------------------------------------------------------
-//static void switch_buffers(){
-//  static uint8_t buffer_order = true;
-//  if(buffer_order){
-//    tracker_buffer_A = buffer_B;
-//    tracker_buffer_B = buffer_A;
-//  }else{
-//    tracker_buffer_A = buffer_A;
-//    tracker_buffer_B = buffer_B;
-//  }
-//  buffer_order = !buffer_order;
-//}
-//-----------------------------------------------------------------------------
 // Pushes camera frame buffer to tracker buffer 'A'
 void push_camera_buffer(camera_fb_t *fb){
   //switch_buffers();

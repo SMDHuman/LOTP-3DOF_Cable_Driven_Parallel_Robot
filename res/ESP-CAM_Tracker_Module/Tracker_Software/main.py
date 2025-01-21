@@ -1,66 +1,65 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 from serialcom_task import SerialCOM
+from layout import Layout
+from PIL import ImageTk, Image
+import struct
 #------------------------------------------------------------------------------
-class App(tk.Tk):
+class App(Layout):
     def __init__(self) -> None:
-        super().__init__("ESP Tracker Software")
-        self.geometry("800x600")
-        for r in range(3):
-            self.rowconfigure(r, weight=1)
-        self.columnconfigure(0, weight=0)
-        self.columnconfigure(1, weight=1)
-
-        configs_frame = tk.Frame(self)
-        configs_frame.pack(side="left", fill="y")
+        super().__init__()
+        #...
         self.sercom = SerialCOM()
         self.sercom.set_disconnect_callback(self.update_com_list)
-        
-        # ____ Serial Config Frame ____
-        serial_config_fr = tk.LabelFrame(configs_frame, text="Serial Config", width=200)
-        serial_config_fr.pack(side = "top", fill="x")
-        serial_config_fr.columnconfigure(0, weight=1)
-        serial_config_fr.columnconfigure(1, weight=1)
+        self.sercom.set_receive_callback(self.package_received)
         #...
-        tk.Label(serial_config_fr, text="Port:").grid(row=0, column=0)
-        self.serial_port_select = ttk.Combobox(serial_config_fr, state="readonly", width=8)
         self.serial_port_select.bind("<<ComboboxSelected>>", self.serial_port_select_event)
         self.serial_port_select.bind("<Button-1>", self.update_com_list)
-        self.serial_port_select.set("None")
-        self.serial_port_select.grid(row=0, column=1)
         #...
-        tk.Label(serial_config_fr, text="Baudrate:").grid(row=1, column=0)
-        bauds = ["4800", "9600", "19200", "38400", "57600", "115200", "230400", "460800", "921600"]
-        self.serial_baudrate_select = ttk.Combobox(serial_config_fr,values=bauds, width=8)
+        f = lambda: self.sercom.write(0x10)
+        self.tracker_framecount_button.configure(command = f)
+        f = lambda: self.sercom.write(bytearray([0x0B, 0x0A]))
+        self.camera_raw_button.configure(command = f)
+        f = lambda: self.sercom.write(0x0F)
+        self.tracker_rects_button.configure(command = f)
+        #...
+        self.serial_connect_button.configure(command=self.serial_connect_event)
+        self.serial_disconnect_button.configure(command=self.serial_disconnect_event)
         self.serial_baudrate_select.bind("<<ComboboxSelected>>", self.serial_baudrate_select_event)
-        self.serial_baudrate_select.set("115200")
-        self.serial_baudrate_select.grid(row=1, column=1)
         #...
-        self.serial_connect_button = tk.Button(serial_config_fr, text="Connect", 
-                                                state="disabled", command=self.serial_connect_event)
-        self.serial_connect_button.grid(row=2, column=0, sticky = "e")
-        self.serial_disconnect_button = tk.Button(serial_config_fr, text="Disconnect", 
-                                                  state="disabled", command=self.serial_disconnect_event)
-        self.serial_disconnect_button.grid(row=2, column=1, sticky="w")
-        # ____ Camera Config Frame ____
-        camera_config_fr = tk.LabelFrame(configs_frame, text="Camera Config", width=200)
-        camera_config_fr.pack(side = "top", fill="x")
-        #tk.Label(camera_config_fr, text="Port:").grid(row=0, column=0)
-        # ____ Tracker Config Frame ____
-        tracker_config_fr = tk.LabelFrame(configs_frame, text="Tracker Config", width=200)
-        tracker_config_fr.pack(side = "top", fill="x")
-        tracker_framecount_button = tk.Button(tracker_config_fr, text = "Request Frame Count")
-        f = lambda event: self.sercom.write(0x10)
-        tracker_framecount_button.bind("<Button-1>", f)
-        tracker_framecount_button.pack()
-        # ____ Graphics Frame ____
-        graphics_fr = tk.LabelFrame(self, text="Graphics")
-        graphics_fr.pack(side = "left", expand=1, fill="both")
-
-        self.protocol("WM_DELETE_WINDOW", self.app_close)
-
+        self.protocol("WM_DELETE_WINDOW", self.on_app_close)
         #...
         self.update_com_list()
+    #--------------------------------------------------------------------------
+    #...
+    def package_received(self, package):
+        print("Package Type:", package[0])
+        # Frames
+        if(package[0] == 0x00):
+            w, h = struct.unpack("II", package[1:1+4*2])
+            frame = Image.frombytes("L", (w, h), package[3:])
+            self._img = ImageTk.PhotoImage(frame)   
+            self.frame_canvas.configure(width = w, height = h)
+            self.frame_canvas.create_image(0, 0, image = self._img, anchor="nw")
+        # Rectangles
+        elif(package[0] == 0x01):
+            size = int((len(package)-1)/4)
+            rects = struct.unpack("I"*size, package[1:])
+            rects = [rects[i:i+4] for i in range(0, size, 4)]
+            self.frame_canvas.delete("rects")
+            for rect in rects[:-1]:
+                self.frame_canvas.create_rectangle(*rect, 
+                                                   tags=("rects", ),
+                                                   width = 3,
+                                                   outline = "red")
+        # Unsigned Integers
+        elif(package[0] == 0x02):
+            lenght = int((len(package)-1)/4)
+            uints = struct.unpack("I"*lenght, package[1:])
+            print(uints[:lenght])
+        # Unknown Type
+        else:
+            print(package[1:])
     #--------------------------------------------------------------------------
     #...
     def update_com_list(self, event = None):
@@ -109,7 +108,7 @@ class App(tk.Tk):
                     package = self.sercom.read()
                     print(package)
 
-    def app_close(self):
+    def on_app_close(self):
         self.sercom.active = False
         self.destroy()
 

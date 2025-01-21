@@ -23,6 +23,13 @@
 #define CMD_REQUEST_RECTS 0x0F
 #define CMD_REQUEST_FRAME_COUNT 0x10
 
+enum tx_package_type_e{
+    FRAME,
+    RECTS,
+    UINTS,
+    INTS
+};
+
 //-----------------------------------------------------------------------------
 void serial_init();
 void serial_task();
