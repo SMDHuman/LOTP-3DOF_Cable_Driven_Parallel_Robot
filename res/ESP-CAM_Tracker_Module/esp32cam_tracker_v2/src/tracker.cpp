@@ -4,6 +4,7 @@
 #include "tracker.h"
 #include "camera.h"
 #include "beacon_com.h"
+#include "serial_com.h"
 
 //#define DEBUG
 //-----------------------------------------------------------------------------
@@ -18,9 +19,8 @@ static void locate_rect_buffer();
 //-----------------------------------------------------------------------------
 //...
 static uint8_t buffer_A[TRACKER_BUF_LEN];
-//static uint8_t buffer_B[TRACKER_BUF_LEN];
+uint8_t request_frame = 0;
 uint8_t* tracker_buffer_A = buffer_A;
-//uint8_t* tracker_buffer_B = buffer_B;
 uint64_t tracker_frame_count = 0;
 //...
 uint8_t tracker_points_len = 0;
@@ -39,17 +39,30 @@ void tracker_task(){
     //...
     //switch_buffers();
     filter_buffer();
+    if(request_frame == 1){
+      send_image(TRACKER_WIDTH, TRACKER_HEIGHT, tracker_buffer_A, TRACKER_BUF_LEN, 1);
+    }
     //...
     //switch_buffers();
     erode_buffer();
+    if(request_frame == 2){
+      send_image(TRACKER_WIDTH, TRACKER_HEIGHT, tracker_buffer_A, TRACKER_BUF_LEN, 2);
+    }
     //...
     //switch_buffers();
     dilate_buffer();
+    if(request_frame == 3){
+      send_image(TRACKER_WIDTH, TRACKER_HEIGHT, tracker_buffer_A, TRACKER_BUF_LEN, 3);
+    }
     //...
     flood_buffer();
+    if(request_frame == 4){
+      send_image(TRACKER_WIDTH, TRACKER_HEIGHT, tracker_buffer_A, TRACKER_BUF_LEN, 4);
+    }
     locate_rect_buffer();
     tracker_status = WAIT;
     tracker_frame_count++;
+    request_frame = 0;
   }
 }
 //-----------------------------------------------------------------------------

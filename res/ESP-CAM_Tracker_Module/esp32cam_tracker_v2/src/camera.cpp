@@ -10,6 +10,8 @@
 capture_mode_e camera_capture_mode = ONESHOT;
 bool camera_trigger;
 uint64_t fb_log_last;
+uint64_t camera_width;
+uint64_t camera_height;
 
 //-----------------------------------------------------------------------------
 void camera_init(){
@@ -28,6 +30,8 @@ void camera_task(){
   static uint64_t last_camera_report;
   //...
   camera_fb_t *fb = esp_camera_fb_get(); // get fresh image
+  camera_width = fb->width;
+  camera_height = fb->height;
   //...
   if(!fb){
     Serial.println("Couldn't get frame buffer!");
@@ -39,17 +43,17 @@ void camera_task(){
   }
   //...
   if((camera_capture_mode == ONLED) & camera_trigger){
-    send_image(fb->width, fb->height, fb->format, fb->buf, fb->len);
+    send_image(fb->width, fb->height, fb->buf, fb->len);
     camera_trigger = false;
   }
   //...
   if((camera_capture_mode == ONESHOT) & camera_trigger){
-    send_image(fb->width, fb->height, fb->format, fb->buf, fb->len);
+    send_image(fb->width, fb->height, fb->buf, fb->len);
     camera_trigger = false;
   }
   //...
   if(camera_capture_mode == STREAM){
-    send_image(fb->width, fb->height, fb->format, fb->buf, fb->len);
+    send_image(fb->width, fb->height, fb->buf, fb->len);
   }
   //...
   esp_camera_fb_return(fb);

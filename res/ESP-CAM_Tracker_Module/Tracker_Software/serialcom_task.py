@@ -86,6 +86,10 @@ class SerialCOM:
 					self.disconnected_cb()
 					self.serial.close()
 			#...
+			if(self.slip.wait_ack):
+				self.serial.write(bytearray([1]))
+				self.slip.wait_ack = False
+			#...
 			if(self.slip.ready):
 				pack = self.slip.get()
 				if(self.check_checksum(pack)):

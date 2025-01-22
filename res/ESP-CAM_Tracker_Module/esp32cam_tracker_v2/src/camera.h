@@ -44,6 +44,8 @@ enum capture_mode_e {
 };
 extern capture_mode_e camera_capture_mode;
 extern bool camera_trigger;
+extern uint64_t camera_width;
+extern uint64_t camera_height;
 
 //-----------------------------------------------------------------------------
 void camera_init();

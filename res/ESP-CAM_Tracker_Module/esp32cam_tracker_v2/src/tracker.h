@@ -31,6 +31,7 @@ enum tracker_status_e{
     READY,
 };
 
+extern uint8_t request_frame;
 extern tracker_status_e tracker_status;
 extern uint8_t tracker_wait_buffer;
 extern uint8_t* tracker_buffer_A;

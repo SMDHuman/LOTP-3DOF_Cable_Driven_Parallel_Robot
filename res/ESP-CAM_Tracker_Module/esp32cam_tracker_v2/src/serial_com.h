@@ -7,7 +7,8 @@
 #include "esp_camera.h"
 
 //-----------------------------------------------------------------------------
-#define BAUDRATE 115200
+#define BAUDRATE 921600 
+#define S_MAX_PACKAGE 1024
 
 //-----------------------------------------------------------------------------
 #define S_END 0xC0
@@ -19,15 +20,19 @@
 #define CMD_ONESHOT 0x0B
 #define CMD_STREAM 0x0C
 #define CMD_ONLED 0x0D
-#define CMD_REQUEST_FRAME 0x0E
-#define CMD_REQUEST_RECTS 0x0F
-#define CMD_REQUEST_FRAME_COUNT 0x10
+#define RQT_FRAME 0x0E
+#define RQT_RECTS 0x0F
+#define RQT_FRAME_COUNT 0x10
+#define RQT_T_FRAME_SIZE 0x11
+#define RQT_C_FRAME_SIZE 0x12
+#define RQT_TRACKER_FRAME 0x13
 
 enum tx_package_type_e{
     FRAME,
     RECTS,
-    UINTS,
-    INTS
+    FRAMEC,
+    T_SIZE, // Tracker Frame Size
+    C_SIZE  // Camera Frame Size
 };
 
 //-----------------------------------------------------------------------------
@@ -35,7 +40,7 @@ void serial_init();
 void serial_task();
 void send_slip(uint8_t *buf, size_t len);
 void send_slip_single(uint8_t data);
-void send_image(size_t w, size_t h, pixformat_t pfmt, uint8_t *buf, size_t len);
+void send_image(size_t w, size_t h, uint8_t *buf, size_t len, uint8_t id = 0);
 void end_slip();
 
 //-----------------------------------------------------------------------------

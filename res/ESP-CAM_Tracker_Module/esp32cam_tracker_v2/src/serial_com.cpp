@@ -7,6 +7,8 @@
 #include "utils.h"
 
 uint64_t checksum = 0;
+uint64_t data_count = 0;
+uint8_t wait_ack = false;
 
 //-----------------------------------------------------------------------------
 void serial_init(){
@@ -39,7 +41,7 @@ void serial_task(){
         camera_capture_mode = ONLED;
       break;
       //...
-      case CMD_REQUEST_FRAME:
+      case RQT_FRAME:
         send_slip_single(tx_package_type_e::FRAME);
         send_slip_single(TRACKER_WIDTH);
         send_slip_single(TRACKER_HEIGHT);
@@ -47,18 +49,43 @@ void serial_task(){
         end_slip();
       break;
       //...
-      case CMD_REQUEST_RECTS:
+      case RQT_RECTS:
         send_slip_single(tx_package_type_e::RECTS);
         send_slip((uint8_t*)tracker_points_rect, tracker_points_len*sizeof(point_rect_t));
         end_slip();
       break;
       //...
-      case CMD_REQUEST_FRAME_COUNT:
-        send_slip_single(tx_package_type_e::UINTS);
-        convert64_u frm_cnt;
-        frm_cnt.number = tracker_frame_count;
+      case RQT_FRAME_COUNT:
+      {
+        send_slip_single(tx_package_type_e::FRAMEC);
+        convert64_u frm_cnt{.number=tracker_frame_count};
         send_slip(frm_cnt.div4, 4);
         end_slip();
+      }
+      break;
+      //...
+      case RQT_T_FRAME_SIZE:
+        send_slip_single(tx_package_type_e::T_SIZE);
+        send_slip_single(TRACKER_WIDTH);
+        send_slip_single(TRACKER_HEIGHT);
+        end_slip();
+      break;
+      //...
+      case RQT_C_FRAME_SIZE:
+      {
+        send_slip_single(tx_package_type_e::C_SIZE);
+        convert64_u cw{.number=camera_width};
+        send_slip(cw.div4, 4);
+        convert64_u ch{.number=camera_height};
+        send_slip(ch.div4, 4);
+        end_slip();
+      }
+      break;
+      case RQT_TRACKER_FRAME:
+      {
+        uint8_t section = Serial.read();
+        request_frame = section;
+      }
       break;
     }
   }
@@ -73,6 +100,14 @@ void send_slip(uint8_t *buf, size_t len){
 
 //-----------------------------------------------------------------------------
 void send_slip_single(uint8_t data){
+  if(data_count == S_MAX_PACKAGE){
+    Serial.write(S_ESC);
+    Serial.write(S_END);
+    while(!Serial.available());
+    Serial.read();
+    data_count = 0;
+  }
+  //...
   checksum += data;
   if(data == S_END){
     Serial.write(S_ESC);
@@ -85,6 +120,7 @@ void send_slip_single(uint8_t data){
   else{
     Serial.write(data);
   }
+  data_count++;
 }
 //-----------------------------------------------------------------------------
 void end_slip(){
@@ -94,15 +130,17 @@ void end_slip(){
   send_slip(value.div4, 4);
   Serial.write(S_END);
   checksum = 0;
+  data_count = 0;
 }
 
 //-----------------------------------------------------------------------------
-void send_image(size_t w, size_t h, pixformat_t pfmt, uint8_t *buf, size_t len){
+void send_image(size_t w, size_t h, uint8_t *buf, size_t len, uint8_t id){
   send_slip_single(tx_package_type_e::FRAME);
+  send_slip_single(id);
   convert64_u w_c{.number=w};
   convert64_u h_c{.number=h};
-  send_slip(w_c.div4, 4);
-  send_slip(h_c.div4, 4);
-  send_slip(buf, len);
+  send_slip(w_c.div4, 4); // Send width
+  send_slip(h_c.div4, 4); // Send height
+  send_slip(buf, len);    // Frame buffer
   end_slip();
 }

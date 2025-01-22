@@ -9,6 +9,7 @@ class SLIP:
 		self.packages: list[bytearray] = []
 		self.esc_flag = False
 		self.ready = False
+		self.wait_ack = False
 	#...
 	def push(self, value: int):
 		if(self.esc_flag):
@@ -16,6 +17,8 @@ class SLIP:
 				self.buffer.append(self.END)
 			elif(value == self.ESC_ESC):
 				self.buffer.append(self.ESC)
+			elif(value == self.END):
+				self.wait_ack = True
 			self.esc_flag = False
 		elif(value == self.ESC):
 			self.esc_flag = True
