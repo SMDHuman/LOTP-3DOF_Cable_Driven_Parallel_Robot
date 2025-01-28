@@ -160,7 +160,7 @@ static void flood_buffer(){
 static void flood_fill(size_t s_i, uint8_t value) 
 { 
   uint8_t base_value = tracker_buffer_A[s_i];
-  size_t check_len = (TRACKER_BUF_LEN>>2);
+  size_t check_len = (TRACKER_BUF_LEN>>2); // TRACKER_BUF_LEN / 4
   size_t *check = (size_t*)malloc(check_len*sizeof(size_t));
   check[0] = s_i;
   uint16_t check_index = 1;

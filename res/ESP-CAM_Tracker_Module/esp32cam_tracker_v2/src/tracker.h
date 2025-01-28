@@ -7,16 +7,17 @@
 //-----------------------------------------------------------------------------
 #include <Arduino.h>
 #include "esp_camera.h"
+#include "config.h"
 
 #define TRACKER_WIDTH 240
 #define TRACKER_HEIGHT 176
 #define TRACKER_BUF_LEN TRACKER_WIDTH*TRACKER_HEIGHT
 
-#define TRACKER_FILTER_MIN 230
-#define TRACKER_ERODE 1
-#define TRACKER_ERODE_RATIO 3
-#define TRACKER_ERODE_RATIO_DIV 10
-#define TRACKER_DILATE 5
+#define TRACKER_FILTER_MIN config.tracker_filter_low
+#define TRACKER_ERODE config.tracker_erode
+#define TRACKER_ERODE_RATIO config.tracker_erode_mul
+#define TRACKER_ERODE_RATIO_DIV config.tracker_erode_div
+#define TRACKER_DILATE config.tracker_dilate
 
 //-----------------------------------------------------------------------------
 struct point_rect_t{

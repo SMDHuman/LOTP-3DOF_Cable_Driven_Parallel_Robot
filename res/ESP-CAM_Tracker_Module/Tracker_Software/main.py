@@ -59,7 +59,8 @@ class App(Layout):
                 colored_frame = Image.new("RGB", (w, h))
                 for y in range(h):
                     for x in range(w):
-                        index = int(frame.getpixel((x, y)))
+                        color = frame.getpixel((x, y))
+                        index = int(color)
                         if(index > 0):
                             colored_frame.putpixel((x, y), self.rand_colors[index])
                 frame = colored_frame

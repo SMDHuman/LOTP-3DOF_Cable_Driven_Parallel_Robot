@@ -5,10 +5,11 @@
 #define SERIAL_COM_H
 #include <Arduino.h>
 #include "esp_camera.h"
+#include "config.h"
 
 //-----------------------------------------------------------------------------
 #define BAUDRATE 921600 
-#define S_MAX_PACKAGE 1024
+#define S_MAX_PACKAGE config.serial_package_size
 
 //-----------------------------------------------------------------------------
 #define S_END 0xC0
@@ -26,6 +27,8 @@
 #define RQT_T_FRAME_SIZE 0x11
 #define RQT_C_FRAME_SIZE 0x12
 #define RQT_TRACKER_FRAME 0x13
+#define WRITE_CONFIG 0x14
+#define READ_CONFIG 0x15
 
 enum tx_package_type_e{
     FRAME,
