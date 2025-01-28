@@ -42,7 +42,7 @@ void serial_task(){
       break;
       //...
       case RQT_FRAME:
-        send_slip_single(tx_package_type_e::FRAME);
+        send_slip_single(FRAME);
         send_slip_single(TRACKER_WIDTH);
         send_slip_single(TRACKER_HEIGHT);
         send_slip(tracker_buffer_A, TRACKER_BUF_LEN);
@@ -50,14 +50,14 @@ void serial_task(){
       break;
       //...
       case RQT_RECTS:
-        send_slip_single(tx_package_type_e::RECTS);
+        send_slip_single(RECTS);
         send_slip((uint8_t*)tracker_points_rect, tracker_points_len*sizeof(point_rect_t));
         end_slip();
       break;
       //...
       case RQT_FRAME_COUNT:
       {
-        send_slip_single(tx_package_type_e::FRAMEC);
+        send_slip_single(FRAME_COUNT);
         convert64_u frm_cnt{.number=tracker_frame_count};
         send_slip(frm_cnt.div4, 4);
         end_slip();
@@ -65,7 +65,7 @@ void serial_task(){
       break;
       //...
       case RQT_T_FRAME_SIZE:
-        send_slip_single(tx_package_type_e::T_SIZE);
+        send_slip_single(TRACKER_SIZE);
         send_slip_single(TRACKER_WIDTH);
         send_slip_single(TRACKER_HEIGHT);
         end_slip();
@@ -73,7 +73,7 @@ void serial_task(){
       //...
       case RQT_C_FRAME_SIZE:
       {
-        send_slip_single(tx_package_type_e::C_SIZE);
+        send_slip_single(CAMERA_SIZE);
         convert64_u cw{.number=camera_width};
         send_slip(cw.div4, 4);
         convert64_u ch{.number=camera_height};
@@ -90,10 +90,6 @@ void serial_task(){
       case WRITE_CONFIG:
       {
         //...
-        convert64_u config_size{.number = sizeof(config)};
-        send_slip(config_size.div4, 4);
-        end_slip();
-        //...
         uint8_t config_package[sizeof(config)];
         Serial.read(config_package, sizeof(config));
         //...
@@ -103,10 +99,16 @@ void serial_task(){
       break;
       case READ_CONFIG:
       {
+        send_slip_single(CONFIG);
         uint8_t config_package[sizeof(config)];
         memcpy(config_package, &config, sizeof(config));
         send_slip(config_package, sizeof(config));
         end_slip();
+      }
+      break;
+      case RESET_CONFIG:
+      {
+        config_set_reset_flag();
       }
       break;
     }

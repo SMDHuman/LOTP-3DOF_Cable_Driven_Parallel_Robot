@@ -17,25 +17,29 @@
 #define S_ESC_END 0xDC
 #define S_ESC_ESC 0xDD
 
-#define CMD_TRIGGER 0x0A
-#define CMD_ONESHOT 0x0B
-#define CMD_STREAM 0x0C
-#define CMD_ONLED 0x0D
-#define RQT_FRAME 0x0E
-#define RQT_RECTS 0x0F
-#define RQT_FRAME_COUNT 0x10
-#define RQT_T_FRAME_SIZE 0x11
-#define RQT_C_FRAME_SIZE 0x12
-#define RQT_TRACKER_FRAME 0x13
-#define WRITE_CONFIG 0x14
-#define READ_CONFIG 0x15
+enum rx_package_type_e{
+    CMD_TRIGGER = 0x0A,
+    CMD_ONESHOT,
+    CMD_STREAM,
+    CMD_ONLED,
+    RQT_FRAME,
+    RQT_RECTS,
+    RQT_FRAME_COUNT,
+    RQT_T_FRAME_SIZE,
+    RQT_C_FRAME_SIZE,
+    RQT_TRACKER_FRAME,
+    WRITE_CONFIG,
+    READ_CONFIG,
+    RESET_CONFIG
+};
 
 enum tx_package_type_e{
     FRAME,
     RECTS,
-    FRAMEC,
-    T_SIZE, // Tracker Frame Size
-    C_SIZE  // Camera Frame Size
+    FRAME_COUNT,
+    TRACKER_SIZE, // Tracker Frame Size
+    CAMERA_SIZE,  // Camera Frame Size
+    CONFIG
 };
 
 //-----------------------------------------------------------------------------

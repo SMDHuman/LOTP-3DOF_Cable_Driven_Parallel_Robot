@@ -46,12 +46,28 @@ class Layout(tk.Tk):
                                                   state="disabled")
         self.serial_disconnect_button.grid(row=2, column=1, sticky="w")
         #----------------------------------------------------------------------
+        # ____ Module Config Frame ____
+        module_config_fr = tk.LabelFrame(configs_frame, 
+                                         text="Module Config", 
+                                         width=200)
+        #...
+        frame = tk.Frame(module_config_fr)
+        tk.Label(frame, text = "Led Delay : ").pack(side = "left")
+        self.led_delay_entry=tk.Spinbox(frame, from_ = 0, to = 2000, increment=50, width=5)
+        self.led_delay_entry.pack()
+        frame.pack()
+        #...
+        self.send_config_button=tk.Button(module_config_fr, 
+                                         text = "Set Config")
+        self.send_config_button.pack()
+        module_config_fr.pack(side = "top", fill="x")
+        #----------------------------------------------------------------------
         # ____ Camera Config Frame ____
         camera_config_fr = tk.LabelFrame(configs_frame, 
                                          text="Camera Config", 
                                          width=200)
         self.camera_framesize_label=tk.Label(camera_config_fr, 
-                                              text = "Camera Size: -x-")
+                                              text = "Camera Size : -x-")
         self.camera_framesize_label.pack()
         camera_config_fr.pack(side = "top", fill="x")
         #----------------------------------------------------------------------
@@ -64,7 +80,7 @@ class Layout(tk.Tk):
         self.tracker_framecount_label=tk.Label(tracker_config_fr, 
                                                  text = "FPS: 0")
         self.tracker_framesize_label=tk.Label(tracker_config_fr, 
-                                              text = "Frame Size: -x-")
+                                              text = "Frame Size : -x-")
         self.tracker_framecount_label.pack()
         self.tracker_framesize_label.pack()
         #----------------------------------------------------------------------

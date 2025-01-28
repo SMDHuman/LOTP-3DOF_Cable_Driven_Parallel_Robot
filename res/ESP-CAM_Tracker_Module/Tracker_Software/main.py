@@ -12,6 +12,7 @@ class App(Layout):
         #...
         self.camera_size = (0, 0)
         self.tracker_size = (0, 0)
+        self.esp_config: list = []
         self.rand_colors = [(randint(0, 255), randint(0, 255), randint(0, 255)) for i in range(255)]
         #...
         self.sercom = SerialCOM()
@@ -20,6 +21,8 @@ class App(Layout):
         #...
         self.serial_port_select.bind("<<ComboboxSelected>>", self.serial_port_select_event)
         self.serial_port_select.bind("<Button-1>", self.update_com_list)
+        #...
+        self.send_config_button.configure(command = self.send_config)
         #...
         self.request_raw_button.configure(command = lambda: self.sercom.write(bytearray([0x0B, 0x0A])))
         self.request_rects_button.configure(command = lambda: self.sercom.write(0x0F))
@@ -60,7 +63,10 @@ class App(Layout):
                 for y in range(h):
                     for x in range(w):
                         color = frame.getpixel((x, y))
-                        index = int(color)
+                        if(type(color) == int):
+                            index = color
+                        else: 
+                            index = 0
                         if(index > 0):
                             colored_frame.putpixel((x, y), self.rand_colors[index])
                 frame = colored_frame
@@ -89,18 +95,22 @@ class App(Layout):
         # Frame Count
         elif(package[0] == 0x02):
             count = struct.unpack("I", package[1:])[0]
-            self.tracker_framecount_label.configure(text=f"FPS: {count-self.last_framecount}")
+            self.tracker_framecount_label.configure(text=f"FPS : {count-self.last_framecount}")
             self.last_framecount = count
         # Tracker Frame Size
         elif(package[0] == 0x03 and len(package) == 2+1):
             size = struct.unpack("BB", package[1:])
-            self.tracker_framesize_label.configure(text=f"Frame Size: {size[0]}x{size[1]}")
+            self.tracker_framesize_label.configure(text=f"Frame Size : {size[0]}x{size[1]}")
             self.tracker_size = size[:2]
-        # Tracker Frame Size
+        # Camera Frame Size
         elif(package[0] == 0x04 and len(package) == 4*2+1):
             size = struct.unpack("II", package[1:])
-            self.camera_framesize_label.configure(text=f"Frame Size: {size[0]}x{size[1]}")
+            self.camera_framesize_label.configure(text=f"Camera Size : {size[0]}x{size[1]}")
             self.camera_size = size[:2]
+        # Module Config
+        elif(package[0] == 0x05):
+            self.esp_config = list(struct.unpack("BbbbBBBBBBbHBBBBBH", package[1:]))
+            self.set_config_widgets()
         # Unknown Type
         else:
             print(package[1:])
@@ -138,8 +148,11 @@ class App(Layout):
         self.sercom.open()
         self.serial_connect_button.configure(state="disabled")
         self.serial_disconnect_button.configure(state="normal")
+        # Request Frame Sizes
         self.sercom.write(0x11)
         self.sercom.write(0x12)
+        # Request config
+        self.sercom.write(0x15)
     #--------------------------------------------------------------------------
     #...
     def serial_disconnect_event(self):
@@ -147,13 +160,22 @@ class App(Layout):
         self.serial_connect_button.configure(state="normal")
         self.serial_disconnect_button.configure(state="disabled")
     #--------------------------------------------------------------------------
-    def serial_rx_task(self):
-        while(self.state == "normal"):
-            if(self.sercom.is_open):
-                if(self.sercom.in_waiting):
-                    package = self.sercom.read()
-                    print(package)
-
+    #...
+    def set_config_widgets(self):
+        self.led_delay_entry.delete(0, "end")
+        self.led_delay_entry.insert(0, str(self.esp_config[11]))
+    #--------------------------------------------------------------------------
+    #...
+    def get_config_widgets(self):
+        self.esp_config[11] = int(self.led_delay_entry.get())
+    #--------------------------------------------------------------------------
+    #...
+    def send_config(self):
+        self.get_config_widgets()
+        package = bytearray([0x14])
+        package += struct.pack("BbbbBBBBBBbHBBBBBH", *self.esp_config)
+        self.sercom.write(package)
+    #--------------------------------------------------------------------------
     def on_app_close(self):
         self.sercom.active = False
         self.destroy()

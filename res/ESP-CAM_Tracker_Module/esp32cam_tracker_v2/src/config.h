@@ -30,6 +30,7 @@ extern struct config_t{
 void config_init();
 void config_task();
 void config_commit();
+void config_set_reset_flag();
 
 //-----------------------------------------------------------------------------
 #endif
