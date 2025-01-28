@@ -7,6 +7,8 @@
 #include "camera.h"
 #include "beacon_com.h"
 #include "tracker.h"
+#include "config.h"
+#include <EEPROM.h>
 
 //-----------------------------------------------------------------------------
 void led_init();
@@ -19,6 +21,7 @@ bool refresh_enable = true;
 
 //-----------------------------------------------------------------------------
 void setup() {
+  config_init();
   led_init();
   serial_init();
   tracker_init();
@@ -28,6 +31,7 @@ void setup() {
 
 //-----------------------------------------------------------------------------
 void loop() {
+  config_task();
   serial_task();
   camera_task();
   beacon_task();
@@ -44,7 +48,7 @@ void led_init(){
 void led_task(){
 static uint64_t led_task_last;
 
-  if(millis() - led_task_last > 0){
+  if(millis() - led_task_last > config.led_blink_delay){
     digitalWrite(33, led_state);
     led_state = !led_state;
     //...

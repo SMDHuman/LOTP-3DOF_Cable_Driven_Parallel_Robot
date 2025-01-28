@@ -87,6 +87,28 @@ void serial_task(){
         request_frame = section;
       }
       break;
+      case WRITE_CONFIG:
+      {
+        //...
+        convert64_u config_size{.number = sizeof(config)};
+        send_slip(config_size.div4, 4);
+        end_slip();
+        //...
+        uint8_t config_package[sizeof(config)];
+        Serial.read(config_package, sizeof(config));
+        //...
+        memcpy(&config, config_package, sizeof(config));
+        config_commit();
+      }
+      break;
+      case READ_CONFIG:
+      {
+        uint8_t config_package[sizeof(config)];
+        memcpy(config_package, &config, sizeof(config));
+        send_slip(config_package, sizeof(config));
+        end_slip();
+      }
+      break;
     }
   }
 }
@@ -101,9 +123,9 @@ void send_slip(uint8_t *buf, size_t len){
 //-----------------------------------------------------------------------------
 void send_slip_single(uint8_t data){
   if(data_count == S_MAX_PACKAGE){
-    Serial.write(S_ESC);
+    Serial.write(S_ESC); // ESC+END == ACK
     Serial.write(S_END);
-    while(!Serial.available());
+    while(!Serial.available()); // Wair for ACK
     Serial.read();
     data_count = 0;
   }
