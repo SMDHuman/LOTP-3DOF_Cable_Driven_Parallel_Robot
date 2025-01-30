@@ -5,10 +5,11 @@
 #include "camera.h"
 #include "tracker.h"
 #include "utils.h"
+#include "slip.h"
 
-uint64_t checksum = 0;
-uint64_t data_count = 0;
-uint8_t wait_ack = false;
+static uint64_t checksum = 0;
+static uint64_t data_count = 0;
+static uint8_t wait_ack = false;
 
 //-----------------------------------------------------------------------------
 void serial_init(){
@@ -18,7 +19,10 @@ void serial_init(){
 //-----------------------------------------------------------------------------
 void serial_task(){
   if(Serial.available()){
-    uint8_t cmd = Serial.read();
+    slip_push(Serial.read());
+  }
+  if(slip_is_ready()){
+    uint8_t cmd = slip_package_buffer[0];
     //...
     camera_trigger = false;
     switch(cmd){
@@ -28,7 +32,7 @@ void serial_task(){
           camera_trigger = true;
         }
       break;
-      //...
+      //... 
       case CMD_ONESHOT:
         camera_capture_mode = ONESHOT;
       break;
@@ -83,17 +87,14 @@ void serial_task(){
       break;
       case RQT_TRACKER_FRAME:
       {
-        uint8_t section = Serial.read();
+        uint8_t section = slip_package_buffer[1];
         request_frame = section;
       }
       break;
       case WRITE_CONFIG:
       {
         //...
-        uint8_t config_package[sizeof(config)];
-        Serial.read(config_package, sizeof(config));
-        //...
-        memcpy(&config, config_package, sizeof(config));
+        memcpy(&config, &slip_package_buffer[1], sizeof(config));
         config_commit();
       }
       break;
@@ -112,6 +113,7 @@ void serial_task(){
       }
       break;
     }
+    slip_reset();
   }
 }
 
@@ -167,4 +169,16 @@ void send_image(size_t w, size_t h, uint8_t *buf, size_t len, uint8_t id){
   send_slip(h_c.div4, 4); // Send height
   send_slip(buf, len);    // Frame buffer
   end_slip();
+}
+//-----------------------------------------------------------------------------
+void send_debug(String text){
+  send_slip_single(tx_package_type_e::DEBUG_STR);
+  for(size_t i = 0; i < text.length(); i++){
+    send_slip_single(text[i]);
+  }
+  end_slip();
+}
+//-----------------------------------------------------------------------------
+void send_debug(int number){
+  send_debug(String(number));
 }

@@ -58,7 +58,35 @@ class SerialCOM:
 		self.serial.open()
 	#--------------------------------------------------------------------------
 	#...
+	def send_slip(self, package: bytearray) -> None:
+		#print("package:", package)
+		checksum = 0
+		for data in package:
+			checksum += data
+			if(data == self.slip.END):
+				self.write(self.slip.ESC)
+				self.write(self.slip.ESC_END)
+			elif(data == self.slip.ESC):
+				self.write(self.slip.ESC)
+				self.write(self.slip.ESC_ESC)
+			else:
+				self.write(data)
+		# War Crime 
+		for data in struct.pack("I", checksum):
+			if(data == self.slip.END):
+				self.write(self.slip.ESC)
+				self.write(self.slip.ESC_END)
+			elif(data == self.slip.ESC):
+				self.write(self.slip.ESC)
+				self.write(self.slip.ESC_ESC)
+			else:
+				self.write(data)
+		self.write(self.slip.END)
+
+	#--------------------------------------------------------------------------
+	#...
 	def write(self, data) -> bool:
+		#print("write:", data)
 		if(self.serial.is_open):
 			if(type(data) == list):
 				data = bytearray(data)
@@ -81,6 +109,7 @@ class SerialCOM:
 				try:
 					while(self.serial.in_waiting > 0):
 						value = ord(self.serial.read(1))
+						#print(chr(value), end = "")
 						self.slip.push(value)
 				except:
 					self.disconnected_cb()

@@ -12,7 +12,7 @@ class App(Layout):
         #...
         self.camera_size = (0, 0)
         self.tracker_size = (0, 0)
-        self.esp_config: list = []
+        self.esp_config: list = [0]*18
         self.rand_colors = [(randint(0, 255), randint(0, 255), randint(0, 255)) for i in range(255)]
         #...
         self.sercom = SerialCOM()
@@ -24,12 +24,15 @@ class App(Layout):
         #...
         self.send_config_button.configure(command = self.send_config)
         #...
-        self.request_raw_button.configure(command = lambda: self.sercom.write(bytearray([0x0B, 0x0A])))
-        self.request_rects_button.configure(command = lambda: self.sercom.write(0x0F))
-        self.request_filtered_button.configure(command = lambda: self.sercom.write(bytearray([0x13, 1])))
-        self.request_eroded_button.configure(command = lambda: self.sercom.write(bytearray([0x13, 2])))
-        self.request_dilated_button.configure(command = lambda: self.sercom.write(bytearray([0x13, 3])))  
-        self.request_flooded_button.configure(command = lambda: self.sercom.write(bytearray([0x13, 4])))
+        def f():
+            self.sercom.send_slip(bytearray([0x0B]))
+            self.sercom.send_slip(bytearray([0x0A]))
+        self.request_raw_button.configure(command = f)
+        self.request_rects_button.configure(command = lambda: self.sercom.send_slip(bytearray([0x0F])))
+        self.request_filtered_button.configure(command = lambda: self.sercom.send_slip(bytearray([0x13, 1])))
+        self.request_eroded_button.configure(command = lambda: self.sercom.send_slip(bytearray([0x13, 2])))
+        self.request_dilated_button.configure(command = lambda: self.sercom.send_slip(bytearray([0x13, 3])))  
+        self.request_flooded_button.configure(command = lambda: self.sercom.send_slip(bytearray([0x13, 4])))
         #...
         self.serial_connect_button.configure(command=self.serial_connect_event)
         self.serial_disconnect_button.configure(command=self.serial_disconnect_event)
@@ -46,7 +49,7 @@ class App(Layout):
     #--------------------------------------------------------------------------
     # Request frame count every second
     def request_framecount(self):
-        self.sercom.write(0x10)
+        self.sercom.send_slip(bytearray([0x10]))
         self.after(1000, self.request_framecount)
     #--------------------------------------------------------------------------
     #...
@@ -111,8 +114,12 @@ class App(Layout):
         elif(package[0] == 0x05):
             self.esp_config = list(struct.unpack("BbbbBBBBBBbHBBBBBH", package[1:]))
             self.set_config_widgets()
-        # Unknown Type
+        # Debug String
+        elif(package[0] == 0x06):
+            print("DEBUG:", "".join([chr(d) for d in package[1:]]))
+        # Unknown Typez
         else:
+            print("Unkown: ", end="")
             print(package[1:])
     #--------------------------------------------------------------------------
     #...
@@ -149,10 +156,10 @@ class App(Layout):
         self.serial_connect_button.configure(state="disabled")
         self.serial_disconnect_button.configure(state="normal")
         # Request Frame Sizes
-        self.sercom.write(0x11)
-        self.sercom.write(0x12)
+        self.sercom.send_slip(bytearray([0x11]))
+        self.sercom.send_slip(bytearray([0x12]))
         # Request config
-        self.sercom.write(0x15)
+        self.sercom.send_slip(bytearray([0x15]))
     #--------------------------------------------------------------------------
     #...
     def serial_disconnect_event(self):
@@ -174,7 +181,7 @@ class App(Layout):
         self.get_config_widgets()
         package = bytearray([0x14])
         package += struct.pack("BbbbBBBBBBbHBBBBBH", *self.esp_config)
-        self.sercom.write(package)
+        self.sercom.send_slip(package)
     #--------------------------------------------------------------------------
     def on_app_close(self):
         self.sercom.active = False

@@ -8,6 +8,7 @@
 #include "beacon_com.h"
 #include "tracker.h"
 #include "config.h"
+#include "slip.h"
 #include <EEPROM.h>
 
 //-----------------------------------------------------------------------------
@@ -21,6 +22,7 @@ bool refresh_enable = true;
 
 //-----------------------------------------------------------------------------
 void setup() {
+  slip_init();
   config_init();
   led_init();
   serial_init();
