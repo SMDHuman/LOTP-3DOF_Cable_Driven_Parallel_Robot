@@ -8,12 +8,10 @@
 #include "config.h"
 
 //-----------------------------------------------------------------------------
-#define BAUDRATE 921600 
-#define S_MAX_PACKAGE config.serial_package_size
+#define BAUDRATE config.serial_baudrate
+#define S_MAX_PACKAGE config.serial_tx_package_size
 
 //-----------------------------------------------------------------------------
-
-
 enum rx_package_type_e{
     CMD_TRIGGER = 0x0A,
     CMD_ONESHOT,
@@ -29,11 +27,10 @@ enum rx_package_type_e{
     READ_CONFIG,
     RESET_CONFIG
 };
-
 enum tx_package_type_e{
-    FRAME,
-    RECTS,
-    FRAME_COUNT,
+    FRAME,        // byte array of requested buffer and size
+    RECTS,        // (x1, y1, x2, y2) located bright points
+    FRAME_COUNT,  // Processed frame count since boot
     TRACKER_SIZE, // Tracker Frame Size
     CAMERA_SIZE,  // Camera Frame Size
     CONFIG,

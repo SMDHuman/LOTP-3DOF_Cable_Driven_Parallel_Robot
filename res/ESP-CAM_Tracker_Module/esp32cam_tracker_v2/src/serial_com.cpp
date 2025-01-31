@@ -5,7 +5,7 @@
 #include "camera.h"
 #include "tracker.h"
 #include "utils.h"
-#include "slip.h"
+#include "slip_decoder.h"
 
 static uint64_t checksum = 0;
 static uint64_t data_count = 0;

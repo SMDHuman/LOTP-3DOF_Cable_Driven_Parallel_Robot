@@ -23,7 +23,8 @@ extern struct config_t{
     uint8_t tracker_erode_mul = 3;
     uint8_t tracker_erode_div = 10;
     uint8_t tracker_dilate = 5;
-    uint16_t serial_package_size = 1024;
+    uint16_t serial_tx_package_size = 1024;
+    uint32_t serial_baudrate = 921600;
 } config;
 
 //-----------------------------------------------------------------------------

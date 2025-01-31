@@ -12,7 +12,8 @@ class App(Layout):
         #...
         self.camera_size = (0, 0)
         self.tracker_size = (0, 0)
-        self.esp_config: list = [0]*18
+        self.esp_config: list = [0]*19
+        self.esp_config_struct = "BbbbBBBBBBbHBBBBBHI"
         self.rand_colors = [(randint(0, 255), randint(0, 255), randint(0, 255)) for i in range(255)]
         #...
         self.sercom = SerialCOM()
@@ -112,7 +113,7 @@ class App(Layout):
             self.camera_size = size[:2]
         # Module Config
         elif(package[0] == 0x05):
-            self.esp_config = list(struct.unpack("BbbbBBBBBBbHBBBBBH", package[1:]))
+            self.esp_config = list(struct.unpack(self.esp_config_struct, package[1:]))
             self.set_config_widgets()
         # Debug String
         elif(package[0] == 0x06):
@@ -180,7 +181,7 @@ class App(Layout):
     def send_config(self):
         self.get_config_widgets()
         package = bytearray([0x14])
-        package += struct.pack("BbbbBBBBBBbHBBBBBH", *self.esp_config)
+        package += struct.pack(self.esp_config_struct, *self.esp_config)
         self.sercom.send_slip(package)
     #--------------------------------------------------------------------------
     def on_app_close(self):
